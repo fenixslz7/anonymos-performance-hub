@@ -794,6 +794,42 @@ function registerNetworkIpc() {
   });
 }
 
+function registerAutoLaunchIpc() {
+  ipcMain.handle("desktop:auto-launch:get", async () => {
+    if (process.platform !== "win32" || !app.isPackaged) {
+      return { available: false, enabled: false };
+    }
+    const executable = app.getPath("exe");
+    const settings = app.getLoginItemSettings({ path: executable });
+    return { available: true, enabled: Boolean(settings.openAtLogin) };
+  });
+
+  ipcMain.handle("desktop:auto-launch:set", async (_event, enabled) => {
+    if (process.platform !== "win32" || !app.isPackaged) {
+      throw new Error("A inicialização automática está disponível na versão instalada para Windows.");
+    }
+    if (typeof enabled !== "boolean") throw new Error("Configuração de inicialização inválida.");
+
+    const executable = app.getPath("exe");
+    app.setLoginItemSettings({
+      openAtLogin: enabled,
+      path: executable,
+      args: [],
+    });
+    const settings = app.getLoginItemSettings({ path: executable });
+    if (Boolean(settings.openAtLogin) !== enabled) {
+      throw new Error("O Windows não confirmou a alteração da inicialização automática.");
+    }
+
+    await recordAction(
+      enabled ? "Inicialização automática ativada" : "Inicialização automática desativada",
+      "ANONYMOS PERFORMANCE",
+      { executable },
+    );
+    return { enabled: Boolean(settings.openAtLogin) };
+  });
+}
+
 function registerWindowIpc() {
   ipcMain.handle("desktop:window:minimize", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -914,6 +950,7 @@ function createMainWindow(url) {
 }
 
 app.whenReady().then(async () => {
+  registerAutoLaunchIpc();
   registerWindowIpc();
   registerSystemIpc();
   registerProcessControlIpc();
