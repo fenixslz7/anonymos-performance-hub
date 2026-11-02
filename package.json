@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:desktop": "concurrently -k \"vite dev --host 127.0.0.1 --port 5173 --strictPort\" \"wait-on http://127.0.0.1:5173 && cross-env ANONYMOS_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "build:desktop": "vite build && electron-builder --win nsis"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -91,6 +93,48 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.4"
+  },
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.anonymos.performance",
+    "productName": "ANONYMOS PERFORMANCE",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".output",
+        "to": "app-output"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ANONYMOS-PERFORMANCE-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ANONYMOS PERFORMANCE"
+    }
   }
 }
