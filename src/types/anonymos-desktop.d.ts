@@ -25,6 +25,16 @@ export interface AnonymosNetworkDiagnostics {
   adapters: Array<{ name: string; description: string; linkSpeed: string }>;
   dns: Array<{ interface: string; servers: string[] }>;
 }
+export interface AnonymosCleanupReport {
+  capturedAt: string;
+  ageHours: number;
+  categories: Array<{ id: "user-temp" | "windows-temp"; label: string; path: string; files: number; bytes: number }>;
+  totalFiles: number;
+  totalBytes: number;
+  deletedFiles: number;
+  deletedBytes: number;
+  skippedFiles: number;
+}
 export interface AnonymosProcessInfo {
   pid: number;
   name: string;
@@ -41,6 +51,8 @@ declare global {
       close: () => Promise<boolean>;
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
+      scanCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
+      runCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
       runSpeedTest: () => Promise<AnonymosSpeedTestResult>;
       pickAndLaunchGame: () => Promise<{ launched: boolean; executable?: string; reason?: string }>;
