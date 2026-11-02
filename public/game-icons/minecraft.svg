@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Ícone Minecraft — bloco de grama</title>
+  <g shape-rendering="crispEdges">
+    <path d="M64 5 118 33 64 61 10 33Z" fill="#67a83f"/>
+    <path d="M10 33 64 61 64 122 10 94Z" fill="#80512e"/>
+    <path d="M64 61 118 33 118 94 64 122Z" fill="#5f3b25"/>
+    <path d="M10 33 20 28 30 33 40 28 50 34 60 29 64 31 64 61 10 33Z" fill="#4e8b34"/>
+    <path d="M64 31 74 26 84 31 94 26 104 31 118 24 118 33 64 61Z" fill="#4b852f"/>
+    <path d="M10 33 20 38 20 48 10 43ZM30 43 40 48 40 58 30 53ZM50 53 60 58 60 68 50 63ZM64 61 74 56 74 66 64 71ZM84 51 94 46 94 56 84 61ZM104 41 114 36 114 46 104 51Z" fill="#6b4429"/>
+    <path d="M20 68 30 73 30 83 20 78ZM40 78 50 83 50 93 40 88ZM60 88 64 90 64 100 60 98Z" fill="#9a6336"/>
+    <path d="M74 76 84 71 84 81 74 86ZM94 66 104 61 104 71 94 76ZM74 96 84 91 84 101 74 106ZM94 86 104 81 104 91 94 96Z" fill="#704527"/>
+    <path d="M10 94 20 99 20 109 10 104ZM30 104 40 109 40 119 30 114ZM50 114 60 119 60 124 50 119Z" fill="#654027"/>
+  </g>
+  <path d="M64 5 118 33V94L64 122 10 94V33Z" fill="none" stroke="#2e241c" stroke-width="4" stroke-linejoin="round"/>
+</svg>
