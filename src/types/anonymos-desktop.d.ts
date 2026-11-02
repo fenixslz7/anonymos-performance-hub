@@ -43,6 +43,12 @@ export interface AnonymosProcessInfo {
   responding: boolean;
   startTime: string | null;
 }
+export interface AnonymosBenchmarkResult {
+  capturedAt: string;
+  methodology: string;
+  cpu: { durationMs: number; hashes: number; processedMiB: number; mebibytesPerSecond: number };
+  memory: { durationMs: number; copies: number; copiedMiB: number; mebibytesPerSecond: number };
+}
 export interface AnonymosHistoryEntry {
   id: string;
   capturedAt: string;
@@ -80,6 +86,7 @@ declare global {
       startGameBoost: () => Promise<{ success: boolean; alreadyActive: boolean }>;
       stopGameBoost: () => Promise<{ success: boolean }>;
       listActionHistory: () => Promise<AnonymosHistoryEntry[]>;
+      runBenchmark: () => Promise<AnonymosBenchmarkResult>;
       scanCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       runCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
