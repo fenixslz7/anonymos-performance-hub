@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export function useSeries(len = 40, base = 30, jitter = 10, ms = 1000) {
-  const [data, setData] = useState<number[]>(() => Array.from({ length: len }, (_, i) => base + Math.sin(i / 3) * jitter * 0.6 + (Math.random() - 0.5) * jitter));
+  const [data, setData] = useState<number[]>(() => Array.from({ length: len }, (_, i) => base + Math.sin(i / 3) * jitter * 0.6 + Math.sin(i * 1.7) * jitter * 0.3));
   useEffect(() => {
     const id = setInterval(() => {
       setData((d) => {
