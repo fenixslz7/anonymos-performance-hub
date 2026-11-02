@@ -19,13 +19,13 @@ const formatBytes = (value: number) => {
 function describeDetails(entry: AnonymosHistoryEntry) {
   const details = entry.details || {};
   const parts: string[] = [];
-  if (typeof details.deletedFiles === "number") parts.push(details.deletedFiles + " arquivo(s) removido(s)");
-  if (typeof details.deletedBytes === "number") parts.push(formatBytes(details.deletedBytes) + " liberados");
-  if (typeof details.skippedFiles === "number") parts.push(details.skippedFiles + " ignorado(s)");
-  if (typeof details.pid === "number") parts.push("PID " + details.pid);
-  if (typeof details.source === "string") parts.push("Origem: " + details.source);
-  if (typeof details.createdTemporaryPlan === "boolean") parts.push(details.createdTemporaryPlan ? "Perfil temporário criado" : "Plano existente usado");
-  if (typeof details.executable === "string") parts.push("Executável: " + details.executable.split(/[\\/]/).pop());
+  if (typeof details["deletedFiles"] === "number") parts.push(details["deletedFiles"] + " arquivo(s) removido(s)");
+  if (typeof details["deletedBytes"] === "number") parts.push(formatBytes(details["deletedBytes"]) + " liberados");
+  if (typeof details["skippedFiles"] === "number") parts.push(details["skippedFiles"] + " ignorado(s)");
+  if (typeof details["pid"] === "number") parts.push("PID " + details["pid"]);
+  if (typeof details["source"] === "string") parts.push("Origem: " + details["source"]);
+  if (typeof details["createdTemporaryPlan"] === "boolean") parts.push(details["createdTemporaryPlan"] ? "Perfil temporário criado" : "Plano existente usado");
+  if (typeof details["executable"] === "string") parts.push("Executável: " + details["executable"].split(/[\\/]/).pop());
   return parts.join(" · ") || "Ação registrada localmente";
 }
 
