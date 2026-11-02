@@ -5,6 +5,8 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 
 **Regra de produto:** nenhuma métrica, otimização, benchmark, limpeza ou ação pode ser simulada. Se o recurso não estiver disponível no ambiente, a interface deve informar isso claramente e nunca apresentar um resultado fictício.
 
+**Diretriz visual obrigatória:** toda área deve ter imagens/ícones próprios, animações suaves e controles realmente interativos. A biblioteca de jogos deve exibir identidade visual individual (incluindo FiveM, Fortnite e Counter-Strike 2); o acesso à Internet deve ter ícone animado e clicável, sem fingir estado de conexão; o dashboard deve incluir a colmeia hexagonal interativa alimentada por telemetria real. Não usar cartões genéricos com apenas o nome do módulo.
+
 ## Estado atual auditado
 - A interface atual usa React 19, TanStack Start/Router, Vite e Tailwind.
 - As rotas existentes são Dashboard, Monitor, Otimização, Gráficos e Jogos.
@@ -113,6 +115,9 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - Os controles minimizar/maximizar/fechar da janela agora usam a API segura do preload no desktop; ficam ocultos no preview web.
 - Foi adicionado pipeline Windows para instalar dependências, executar testes e gerar o instalador como artefato do GitHub Actions. A execução real do pipeline ainda precisa ser observada após o push.
 - [x] Auditoria inicial das rotas e componentes atuais.
+- [x] Primeira camada visual de jogos: cartões individuais com símbolos FiveM, Fortnite e Counter-Strike 2 e seleção de jogo.
+- [x] Colmeia hexagonal interativa no dashboard ligada aos valores reais de CPU, RAM, GPU e discos; rede direciona ao diagnóstico dedicado.
+- [x] Ícone de Internet interativo na navegação, com animação de foco/seleção; a animação não representa um teste de conectividade.
 - [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold e CI adicionados; build e validação Windows pendentes).
 - [ ] Telemetria real.
 - [ ] Processos e inicialização.
