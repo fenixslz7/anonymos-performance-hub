@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/jogos")({
   head: () => ({ meta: [{ title: "Game Center — ANONYMOS PERFORMANCE" }, { name: "description", content: "Biblioteca visual, inicialização e modo de jogo reversível." }] }),
