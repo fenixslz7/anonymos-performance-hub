@@ -117,7 +117,7 @@ function Dashboard() {
       <HoneycombPanel metrics={[
         { id: "cpu", label: "CPU", value: snapshot?.cpu.loadPercent == null ? "N/D" : String(Math.round(snapshot.cpu.loadPercent)) + "%", detail: snapshot?.cpu.name ?? "Aguardando leitura nativa do processador.", icon: Cpu },
         { id: "ram", label: "RAM", value: snapshot ? String(Math.round(snapshot.memory.usedPercent)) + "%" : "N/D", detail: snapshot ? formatBytes(snapshot.memory.usedBytes) + " usados de " + formatBytes(snapshot.memory.totalBytes) + "." : "Aguardando leitura da memória.", icon: MemoryStick },
-        { id: "gpu", label: "GPU", value: snapshot ? snapshot.gpu.length + " detectada(s)" : "N/D", detail: gpuNames + " · " + gpuMemory, icon: MonitorCog },
+        { id: "gpu", label: "GPU", value: snapshot ? (snapshot.gpu.some((item) => item.loadPercent != null) ? Math.round(Math.max(...snapshot.gpu.map((item) => item.loadPercent ?? 0))) + "%" : snapshot.gpu.length + " detectada(s)") : "N/D", detail: gpuNames + " · " + gpuMemory + (snapshot?.gpu[0]?.temperatureC == null ? "" : " · " + snapshot.gpu[0].temperatureC + "°C"), icon: MonitorCog },
         { id: "ssd", label: "DISCOS", value: snapshot ? snapshot.disks.length + " unidade(s)" : "N/D", detail: snapshot?.disks.map((disk) => disk.name + ": " + formatBytes(disk.freeBytes) + " livres").join(" · ") || "Aguardando leitura das unidades.", icon: HardDrive },
         { id: "net", label: "REDE", value: "Abrir", detail: "Acesse o diagnóstico para medir latência, perda de pacotes, adaptadores, DNS e velocidade.", icon: Wifi },
       ]} />
