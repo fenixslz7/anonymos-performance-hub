@@ -27,7 +27,7 @@ const games = [
   { name: "Fortnite", short: "FN", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg" },
   { name: "Counter-Strike 2", short: "CS2", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg" },
   { name: "Valorant", short: "V", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/valorant.svg" },
-  { name: "Minecraft", short: "MC", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/minecraft.svg" },
+  { name: "Minecraft", short: "MC", image: "/game-icons/minecraft.svg" },
   { name: "GTA V", short: "V", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/rockstargames.svg" },
 ];
 
@@ -106,8 +106,8 @@ function Graphics() {
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {games.map((game) => <button key={game.name} type="button" aria-pressed={selectedGame === game.name} onClick={() => setSelectedGame(game.name)} className={`group flex min-h-20 items-center gap-3 rounded-xl border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/50 ${selectedGame === game.name ? "border-primary bg-primary/10 shadow-glow" : "border-border bg-background/30"}`}>
             <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-secondary">
-              <span className="font-display text-lg font-black text-muted-foreground">{game.short}</span>
-              {game.image && <img src={game.image} alt={`Ícone ${game.name}`} loading="lazy" className="absolute h-8 w-8 object-contain brightness-0 invert" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+              {!game.image && <span className="font-display text-lg font-black text-muted-foreground">{game.short}</span>}
+              {game.image && <img src={game.image} alt={`Ícone ${game.name}`} loading="lazy" className={`absolute h-8 w-8 object-contain ${game.name === "Minecraft" ? "rounded-sm" : "brightness-0 invert"}`} onError={(event) => { event.currentTarget.style.display = "none"; }} />}}
             </div>
             <div className="min-w-0"><div className="truncate text-xs font-bold">{game.name}</div><div className="mt-1 text-[9px] text-muted-foreground">{selectedGame === game.name ? "Perfil selecionado" : "Selecionar jogo"}</div></div>
           </button>)}
