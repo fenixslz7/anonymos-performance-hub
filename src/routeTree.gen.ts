@@ -10,14 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as GraficosRouteImport } from './routes/graficos'
-import { Route as JogosRouteImport } from './routes/jogos'
-import { Route as MonitorRouteImport } from './routes/monitor'
-import { Route as InternetRouteImport } from './routes/internet'
-import { Route as LimpezaRouteImport } from './routes/limpeza'
-import { Route as InicializacaoRouteImport } from './routes/inicializacao'
-import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as BenchmarkRouteImport } from './routes/benchmark'
+import { Route as GraficosRouteImport } from './routes/graficos'
+import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as InicializacaoRouteImport } from './routes/inicializacao'
+import { Route as InternetRouteImport } from './routes/internet'
+import { Route as JogosRouteImport } from './routes/jogos'
+import { Route as LimpezaRouteImport } from './routes/limpeza'
+import { Route as MonitorRouteImport } from './routes/monitor'
 import { Route as OtimizacaoRouteImport } from './routes/otimizacao'
 
 const IndexRoute = IndexRouteImport.update({
@@ -25,34 +25,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BenchmarkRoute = BenchmarkRouteImport.update({
+  id: '/benchmark',
+  path: '/benchmark',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GraficosRoute = GraficosRouteImport.update({
   id: '/graficos',
   path: '/graficos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JogosRoute = JogosRouteImport.update({
-  id: '/jogos',
-  path: '/jogos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MonitorRoute = MonitorRouteImport.update({
-  id: '/monitor',
-  path: '/monitor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InternetRoute = InternetRouteImport.update({
-  id: '/internet',
-  path: '/internet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LimpezaRoute = LimpezaRouteImport.update({
-  id: '/limpeza',
-  path: '/limpeza',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InicializacaoRoute = InicializacaoRouteImport.update({
-  id: '/inicializacao',
-  path: '/inicializacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoricoRoute = HistoricoRouteImport.update({
@@ -60,9 +40,29 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BenchmarkRoute = BenchmarkRouteImport.update({
-  id: '/benchmark',
-  path: '/benchmark',
+const InicializacaoRoute = InicializacaoRouteImport.update({
+  id: '/inicializacao',
+  path: '/inicializacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InternetRoute = InternetRouteImport.update({
+  id: '/internet',
+  path: '/internet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JogosRoute = JogosRouteImport.update({
+  id: '/jogos',
+  path: '/jogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LimpezaRoute = LimpezaRouteImport.update({
+  id: '/limpeza',
+  path: '/limpeza',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonitorRoute = MonitorRouteImport.update({
+  id: '/monitor',
+  path: '/monitor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OtimizacaoRoute = OtimizacaoRouteImport.update({
@@ -73,59 +73,90 @@ const OtimizacaoRoute = OtimizacaoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/graficos': typeof GraficosRoute
-  '/jogos': typeof JogosRoute
-  '/monitor': typeof MonitorRoute
-  '/internet': typeof InternetRoute
-  '/limpeza': typeof LimpezaRoute
-  '/inicializacao': typeof InicializacaoRoute
-  '/historico': typeof HistoricoRoute
   '/benchmark': typeof BenchmarkRoute
+  '/graficos': typeof GraficosRoute
+  '/historico': typeof HistoricoRoute
+  '/inicializacao': typeof InicializacaoRoute
+  '/internet': typeof InternetRoute
+  '/jogos': typeof JogosRoute
+  '/limpeza': typeof LimpezaRoute
+  '/monitor': typeof MonitorRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/graficos': typeof GraficosRoute
-  '/jogos': typeof JogosRoute
-  '/monitor': typeof MonitorRoute
-  '/internet': typeof InternetRoute
-  '/limpeza': typeof LimpezaRoute
-  '/inicializacao': typeof InicializacaoRoute
-  '/historico': typeof HistoricoRoute
   '/benchmark': typeof BenchmarkRoute
+  '/graficos': typeof GraficosRoute
+  '/historico': typeof HistoricoRoute
+  '/inicializacao': typeof InicializacaoRoute
+  '/internet': typeof InternetRoute
+  '/jogos': typeof JogosRoute
+  '/limpeza': typeof LimpezaRoute
+  '/monitor': typeof MonitorRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/graficos': typeof GraficosRoute
-  '/jogos': typeof JogosRoute
-  '/monitor': typeof MonitorRoute
-  '/internet': typeof InternetRoute
-  '/limpeza': typeof LimpezaRoute
-  '/inicializacao': typeof InicializacaoRoute
-  '/historico': typeof HistoricoRoute
   '/benchmark': typeof BenchmarkRoute
+  '/graficos': typeof GraficosRoute
+  '/historico': typeof HistoricoRoute
+  '/inicializacao': typeof InicializacaoRoute
+  '/internet': typeof InternetRoute
+  '/jogos': typeof JogosRoute
+  '/limpeza': typeof LimpezaRoute
+  '/monitor': typeof MonitorRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/benchmark' | '/otimizacao'
+  fullPaths:
+    | '/'
+    | '/benchmark'
+    | '/graficos'
+    | '/historico'
+    | '/inicializacao'
+    | '/internet'
+    | '/jogos'
+    | '/limpeza'
+    | '/monitor'
+    | '/otimizacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/benchmark' | '/otimizacao'
-  id: '__root__' | '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/benchmark' | '/otimizacao'
+  to:
+    | '/'
+    | '/benchmark'
+    | '/graficos'
+    | '/historico'
+    | '/inicializacao'
+    | '/internet'
+    | '/jogos'
+    | '/limpeza'
+    | '/monitor'
+    | '/otimizacao'
+  id:
+    | '__root__'
+    | '/'
+    | '/benchmark'
+    | '/graficos'
+    | '/historico'
+    | '/inicializacao'
+    | '/internet'
+    | '/jogos'
+    | '/limpeza'
+    | '/monitor'
+    | '/otimizacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  GraficosRoute: typeof GraficosRoute
-  JogosRoute: typeof JogosRoute
-  MonitorRoute: typeof MonitorRoute
-  InternetRoute: typeof InternetRoute
-  LimpezaRoute: typeof LimpezaRoute
-  InicializacaoRoute: typeof InicializacaoRoute
-  HistoricoRoute: typeof HistoricoRoute
   BenchmarkRoute: typeof BenchmarkRoute
+  GraficosRoute: typeof GraficosRoute
+  HistoricoRoute: typeof HistoricoRoute
+  InicializacaoRoute: typeof InicializacaoRoute
+  InternetRoute: typeof InternetRoute
+  JogosRoute: typeof JogosRoute
+  LimpezaRoute: typeof LimpezaRoute
+  MonitorRoute: typeof MonitorRoute
   OtimizacaoRoute: typeof OtimizacaoRoute
 }
 
@@ -138,46 +169,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/benchmark': {
+      id: '/benchmark'
+      path: '/benchmark'
+      fullPath: '/benchmark'
+      preLoaderRoute: typeof BenchmarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/graficos': {
       id: '/graficos'
       path: '/graficos'
       fullPath: '/graficos'
       preLoaderRoute: typeof GraficosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/jogos': {
-      id: '/jogos'
-      path: '/jogos'
-      fullPath: '/jogos'
-      preLoaderRoute: typeof JogosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/monitor': {
-      id: '/monitor'
-      path: '/monitor'
-      fullPath: '/monitor'
-      preLoaderRoute: typeof MonitorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/internet': {
-      id: '/internet'
-      path: '/internet'
-      fullPath: '/internet'
-      preLoaderRoute: typeof InternetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/limpeza': {
-      id: '/limpeza'
-      path: '/limpeza'
-      fullPath: '/limpeza'
-      preLoaderRoute: typeof LimpezaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inicializacao': {
-      id: '/inicializacao'
-      path: '/inicializacao'
-      fullPath: '/inicializacao'
-      preLoaderRoute: typeof InicializacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/historico': {
@@ -187,11 +190,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/benchmark': {
-      id: '/benchmark'
-      path: '/benchmark'
-      fullPath: '/benchmark'
-      preLoaderRoute: typeof BenchmarkRouteImport
+    '/inicializacao': {
+      id: '/inicializacao'
+      path: '/inicializacao'
+      fullPath: '/inicializacao'
+      preLoaderRoute: typeof InicializacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/internet': {
+      id: '/internet'
+      path: '/internet'
+      fullPath: '/internet'
+      preLoaderRoute: typeof InternetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jogos': {
+      id: '/jogos'
+      path: '/jogos'
+      fullPath: '/jogos'
+      preLoaderRoute: typeof JogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/limpeza': {
+      id: '/limpeza'
+      path: '/limpeza'
+      fullPath: '/limpeza'
+      preLoaderRoute: typeof LimpezaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monitor': {
+      id: '/monitor'
+      path: '/monitor'
+      fullPath: '/monitor'
+      preLoaderRoute: typeof MonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/otimizacao': {
@@ -206,14 +237,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  GraficosRoute: GraficosRoute,
-  JogosRoute: JogosRoute,
-  MonitorRoute: MonitorRoute,
-  InternetRoute: InternetRoute,
-  LimpezaRoute: LimpezaRoute,
-  InicializacaoRoute: InicializacaoRoute,
-  HistoricoRoute: HistoricoRoute,
   BenchmarkRoute: BenchmarkRoute,
+  GraficosRoute: GraficosRoute,
+  HistoricoRoute: HistoricoRoute,
+  InicializacaoRoute: InicializacaoRoute,
+  InternetRoute: InternetRoute,
+  JogosRoute: JogosRoute,
+  LimpezaRoute: LimpezaRoute,
+  MonitorRoute: MonitorRoute,
   OtimizacaoRoute: OtimizacaoRoute,
 }
 export const routeTree = rootRouteImport
