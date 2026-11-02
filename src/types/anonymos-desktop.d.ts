@@ -26,6 +26,8 @@ declare global {
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
       pickAndLaunchGame: () => Promise<{ launched: boolean; executable?: string; reason?: string }>;
+      getPowerPlan: () => Promise<{ activeId: string | null; activeName: string; options: Array<{ id: string; label: string }> }>;
+      setPowerPlan: (plan: "balanced" | "high") => Promise<{ success: boolean; plan: string }>;
     };
   }
 }
