@@ -43,6 +43,7 @@ export interface AnonymosProcessInfo {
   responding: boolean;
   startTime: string | null;
 }
+export interface AnonymosDetectedGame { id: "fivem" | "gtav" | "fortnite" | "cs2" | "valorant"; name: string; path: string; }
 export interface AnonymosStartupEntry {
   id: string;
   name: string;
@@ -76,6 +77,8 @@ declare global {
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
       runSpeedTest: () => Promise<AnonymosSpeedTestResult>;
       pickAndLaunchGame: () => Promise<{ launched: boolean; executable?: string; reason?: string }>;
+      listInstalledGames: () => Promise<{ capturedAt: string; games: AnonymosDetectedGame[] }>;
+      launchDetectedGame: (id: AnonymosDetectedGame["id"]) => Promise<{ launched: boolean; name: string; executable: string }>;
       getPowerPlan: () => Promise<{ activeId: string | null; activeName: string; options: Array<{ id: string; label: string }> }>;
       setPowerPlan: (plan: "balanced" | "high") => Promise<{ success: boolean; plan: string }>;
     };
