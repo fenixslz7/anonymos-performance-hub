@@ -74,6 +74,8 @@ declare global {
   interface Window {
     anonymosDesktop?: {
       getInfo: () => Promise<{ version: string; platform: string; isPackaged: boolean }>;
+      getAutoLaunchSettings: () => Promise<{ available: boolean; enabled: boolean }>;
+      setAutoLaunch: (enabled: boolean) => Promise<{ enabled: boolean }>;
       minimize: () => Promise<boolean>;
       toggleMaximize: () => Promise<boolean>;
       close: () => Promise<boolean>;
