@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, CircleAlert, Cpu, Gamepad2, HardDrive, MemoryStick, MonitorCog, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, CircleAlert, Cpu, Gamepad2, HardDrive, MemoryStick, MonitorCog, ShieldCheck, Wifi } from "lucide-react";
+import { HoneycombPanel } from "@/components/HoneycombPanel";
 import type { AnonymosSystemSnapshot } from "@/types/anonymos-desktop";
 
 export const Route = createFileRoute("/")({
@@ -44,6 +45,13 @@ function Dashboard() {
         <Link to="/monitor" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110">Abrir monitor <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </section>
+    <HoneycombPanel metrics={[
+      { id: "cpu", label: "CPU", value: snapshot?.cpu.loadPercent == null ? "N/D" : String(snapshot.cpu.loadPercent) + "%", detail: snapshot?.cpu.name ?? "Aguardando leitura nativa do processador.", icon: Cpu },
+      { id: "ram", label: "RAM", value: snapshot ? String(snapshot.memory.usedPercent) + "%" : "N/D", detail: snapshot ? formatBytes(snapshot.memory.usedBytes) + " usados de " + formatBytes(snapshot.memory.totalBytes) + "." : "Aguardando leitura da memória.", icon: MemoryStick },
+      { id: "gpu", label: "GPU", value: snapshot ? snapshot.gpu.length + " detectada(s)" : "N/D", detail: snapshot?.gpu.map((item) => item.name).join(" · ") || "Adaptadores gráficos ainda não identificados.", icon: MonitorCog },
+      { id: "ssd", label: "DISCOS", value: snapshot ? snapshot.disks.length + " unidade(s)" : "N/D", detail: snapshot?.disks.map((disk) => disk.name + ": " + formatBytes(disk.freeBytes) + " livres").join(" · ") || "Aguardando leitura das unidades.", icon: HardDrive },
+      { id: "net", label: "REDE", value: "Abrir", detail: "O diagnóstico de rede mede latência, perda de pacotes, adaptadores e DNS na área Internet.", icon: Wifi },
+    ]} />
     <section className="space-y-3"><div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="font-display text-lg font-bold">Visão geral do hardware</h2><p className="text-xs text-muted-foreground">Dados coletados do Windows, sem métricas inventadas.</p></div><span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">{snapshot ? "Telemetria conectada" : "Aguardando integração"}</span></div>
       {error && <p role="status" className="text-xs text-warning">{error}</p>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(metric=><article key={metric.label} className="glass flex min-h-32 flex-col justify-between gap-4 p-4"><div className="flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">{metric.label}</span><metric.icon className="h-4 w-4 text-primary" /></div><div><div className="font-display text-xl font-bold">{metric.value}</div><div className="mt-1 truncate text-[11px] text-muted-foreground" title={metric.detail}>{metric.detail}</div></div></article>)}</div>
