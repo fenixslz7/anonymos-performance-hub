@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev:desktop": "concurrently -k \"vite dev --host 127.0.0.1 --port 5173 --strictPort\" \"wait-on http://127.0.0.1:5173 && cross-env ANONYMOS_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
-    "build:desktop": "vite build && electron-builder --win nsis"
+    "build:desktop": "vite build && electron-builder --win nsis --publish never"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -137,5 +137,7 @@
       "shortcutName": "ANONYMOS PERFORMANCE"
     }
   },
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "description": "ANONYMOS PERFORMANCE — painel desktop de diagnóstico e otimização segura para Windows.",
+  "author": "ANONYMOS PERFORMANCE"
 }
