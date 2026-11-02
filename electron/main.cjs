@@ -161,11 +161,16 @@ function registerGameIpc() {
     });
     if (choice.canceled || !choice.filePaths[0]) return { launched: false, reason: "Seleção cancelada." };
     const executable = choice.filePaths[0];
-    const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false });
-    child.once("error", () => {});
-    child.unref();
-    void recordAction("Executável iniciado", executable.split(/[\\\\/]/).pop(), { executable: executable });
-    return { launched: true, executable };
+    if (extname(executable).toLowerCase() !== ".exe") throw new Error("Selecione um arquivo .exe válido.");
+    return new Promise((resolveLaunch, rejectLaunch) => {
+      const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false });
+      child.once("error", rejectLaunch);
+      child.once("spawn", () => {
+        child.unref();
+        void recordAction("Executável iniciado", executable.split(/[\\\\/]/).pop(), { executable: executable });
+        resolveLaunch({ launched: true, executable });
+      });
+    });
   });
 }
 
@@ -432,7 +437,9 @@ function registerStartupIpc() {
         "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
         "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
         "$existing = Get-ItemProperty -LiteralPath $path -Name $name -ErrorAction SilentlyContinue",
-        "if ($null -ne $existing) {",
+        "$hasValue = $false",
+        "if ($null -ne $existing) { $hasValue = $existing.PSObject.Properties.Name -contains $name }",
+        "if ($hasValue) {",
         "  $current = [string]$existing.$name",
         "  if ($current -ceq $command) { @{ success=$true; alreadyRestored=$true } | ConvertTo-Json -Compress; exit }",
         "  throw 'Já existe uma entrada com este nome e um comando diferente. Nada foi sobrescrito.'",
