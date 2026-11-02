@@ -23,6 +23,8 @@ function Monitor() {
   const [processes, setProcesses] = useState<AnonymosProcessInfo[]>([]);
   const [error, setError] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
+  const [terminatingPid, setTerminatingPid] = useState<number | null>(null);
+  const [processMessage, setProcessMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -46,6 +48,22 @@ function Monitor() {
   }, []);
 
   const memory = snapshot?.memory;
+  const protectedNames = new Set(["system", "idle", "registry", "smss", "csrss", "wininit", "services", "lsass", "svchost", "winlogon", "dwm", "fontdrvhost", "secure system", "memory compression", "electron", "node", "anonymos performance"]);
+  const terminateProcess = async (processInfo: AnonymosProcessInfo) => {
+    if (!window.anonymosDesktop || !processInfo.startTime || protectedNames.has(processInfo.name.toLowerCase()) || terminatingPid !== null) return;
+    if (!window.confirm("Encerrar " + processInfo.name + ".exe (PID " + processInfo.pid + ")? O aplicativo será fechado imediatamente e trabalhos não salvos podem ser perdidos.")) return;
+    setTerminatingPid(processInfo.pid);
+    setProcessMessage("");
+    try {
+      await window.anonymosDesktop.terminateProcess({ pid: processInfo.pid, name: processInfo.name, startTime: processInfo.startTime });
+      setProcesses((current) => current.filter((item) => item.pid !== processInfo.pid));
+      setProcessMessage(processInfo.name + ".exe foi encerrado.");
+    } catch (cause) {
+      setProcessMessage(cause instanceof Error ? cause.message : "Não foi possível encerrar o processo.");
+    } finally {
+      setTerminatingPid(null);
+    }
+  };
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -93,7 +111,7 @@ function Monitor() {
       </>}
       <section className="glass overflow-hidden">
         <div className="border-b border-border p-4"><h2 className="font-semibold">Processos ativos</h2><p className="text-xs text-muted-foreground">Lista real do Windows · até 40 processos com maior tempo acumulado de CPU.</p></div>
-        {processes.length ? <div className="max-h-[440px] overflow-auto"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-card text-muted-foreground"><tr><th className="p-3">Processo</th><th className="p-3">PID</th><th className="p-3">CPU acumulada</th><th className="p-3">Memória</th><th className="p-3">Estado</th></tr></thead><tbody>{processes.map((p) => <tr key={p.pid} className="border-t border-border"><td className="p-3 font-medium">{p.name}.exe</td><td className="p-3">{p.pid}</td><td className="p-3">{p.cpuSeconds == null ? "N/D" : `${p.cpuSeconds}s`}</td><td className="p-3">{bytes(p.memoryBytes)}</td><td className="p-3">{p.responding ? "Respondendo" : "Sem resposta"}</td></tr>)}</tbody></table></div> : <p className="p-4 text-sm text-muted-foreground">Aguardando lista de processos do Windows.</p>}
+        {processes.length ? <div className="max-h-[440px] overflow-auto"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-card text-muted-foreground"><tr><th className="p-3">Processo</th><th className="p-3">PID</th><th className="p-3">CPU acumulada</th><th className="p-3">Memória</th><th className="p-3">Estado</th><th className="p-3">Ação</th></tr></thead><tbody>{processes.map((p) => <tr key={p.pid} className="border-t border-border"><td className="p-3 font-medium">{p.name}.exe</td><td className="p-3">{p.pid}</td><td className="p-3">{p.cpuSeconds == null ? "N/D" : `${p.cpuSeconds}s`}</td><td className="p-3">{bytes(p.memoryBytes)}</td><td className="p-3">{p.responding ? "Respondendo" : "Sem resposta"}</td><td className="p-3"><button type="button" onClick={() => void terminateProcess(p)} disabled={!p.startTime || protectedNames.has(p.name.toLowerCase()) || terminatingPid !== null} title={!p.startTime ? "Windows não forneceu a hora de início; atualize a lista" : protectedNames.has(p.name.toLowerCase()) ? "Processo protegido" : "Encerrar processo"} className="rounded-md border border-destructive/25 px-2 py-1 text-[10px] font-semibold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30">{terminatingPid === p.pid ? "Encerrando…" : "Encerrar"}</button></td></tr>)}</tbody></table></div> : <p className="p-4 text-sm text-muted-foreground">Aguardando lista de processos do Windows.</p>}
       </section>
     </div>
   );
