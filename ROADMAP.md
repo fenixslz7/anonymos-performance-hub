@@ -116,7 +116,7 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold e CI adicionados; build e validação Windows pendentes).
 - [ ] Telemetria real.
 - [ ] Processos e inicialização.
-- [ ] Limpeza inteligente.
+- [x] Primeira versão da Limpeza Inteligente: varredura e remoção de arquivos temporários com mais de 24 horas nas pastas temporárias do usuário e do Windows, sem apagar pastas ou arquivos pessoais; validação no Windows ainda pendente.
 - [ ] Game Booster.
 - [ ] Rede e otimizações seguras.
 - [ ] Benchmark, diagnóstico e histórico.
