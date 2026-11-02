@@ -35,6 +35,14 @@ function registerSystemIpc() {
       $os = Get-CimInstance Win32_OperatingSystem
       $cs = Get-CimInstance Win32_ComputerSystem
       $gpu = @(Get-CimInstance Win32_VideoController | ForEach-Object { [pscustomobject]@{ name=$_.Name; driverVersion=$_.DriverVersion; adapterRamBytes=$_.AdapterRAM; loadPercent=$null; temperatureC=$null; memoryUsedBytes=$null; memoryTotalBytes=$null; telemetrySource=$null } })
+      $gpuEngine = @()
+      try {
+        $gpuEngine = @(Get-CimInstance -ClassName Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction Stop | ForEach-Object {
+          if ($_.Name -match 'phys_(\d+)_') {
+            [pscustomobject]@{ adapterIndex=[int]$Matches[1]; loadPercent=[double]$_.UtilizationPercentage }
+          }
+        })
+      } catch { $gpuEngine = @() }
       $disks = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { [pscustomobject]@{ name=$_.DeviceID; label=$_.VolumeName; sizeBytes=[double]$_.Size; freeBytes=[double]$_.FreeSpace } })
       $memoryTotal = [double]$cs.TotalPhysicalMemory
       $memoryFree = [double]$os.FreePhysicalMemory * 1024
@@ -46,12 +54,30 @@ function registerSystemIpc() {
         cpu = [pscustomobject]@{ name=$cpu.Name.Trim(); loadPercent=$cpu.LoadPercentage; cores=$cpu.NumberOfCores; logicalProcessors=$cpu.NumberOfLogicalProcessors; maxClockMHz=$cpu.MaxClockSpeed }
         memory = [pscustomobject]@{ totalBytes=$memoryTotal; freeBytes=$memoryFree; usedBytes=($memoryTotal-$memoryFree); usedPercent=[math]::Round((($memoryTotal-$memoryFree)/$memoryTotal)*100,1) }
         gpu = $gpu
+        gpuEngine = $gpuEngine
         disks = $disks
         os = [pscustomobject]@{ caption=$os.Caption; version=$os.Version; build=$os.BuildNumber; lastBoot=(($os.LastBootUpTime).ToString('o')) }
       }
       $result | ConvertTo-Json -Depth 5 -Compress
     `;
     const snapshot = await runPowerShell(script);
+    const engineSamples = Array.isArray(snapshot.gpuEngine) ? snapshot.gpuEngine : snapshot.gpuEngine ? [snapshot.gpuEngine] : [];
+    const engineLoads = new Map();
+    for (const sample of engineSamples) {
+      const index = Number(sample.adapterIndex);
+      const value = Number(sample.loadPercent);
+      if (!Number.isInteger(index) || index < 0 || !Number.isFinite(value)) continue;
+      const load = Math.max(0, Math.min(100, value));
+      engineLoads.set(index, Math.max(engineLoads.get(index) ?? 0, load));
+    }
+    for (const [index, load] of engineLoads) {
+      const adapter = snapshot.gpu[index];
+      if (adapter && adapter.loadPercent == null) {
+        adapter.loadPercent = Number(load.toFixed(1));
+        adapter.telemetrySource = "Windows GPU Engine (motor mais ocupado)";
+      }
+    }
+    delete snapshot.gpuEngine;
     try {
       let nvidiaOutput = "";
       const candidates = ["nvidia-smi.exe", join(process.env.WINDIR || "C:\\Windows", "System32", "nvidia-smi.exe"), "C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe"];
@@ -111,6 +137,7 @@ async function detectInstalledGames() {
     "$pf86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')",
     "if ($pf86) { $steamRoots += (Join-Path $pf86 'Steam') }",
     "if ($env:LOCALAPPDATA) { $steamRoots += (Join-Path $env:LOCALAPPDATA 'Steam') }",
+    "$steamRegistry = Get-ItemProperty -Path 'HKCU:\\Software\\Valve\\Steam' -Name SteamPath -ErrorAction SilentlyContinue; if ($steamRegistry.SteamPath) { $steamRoots += [Environment]::ExpandEnvironmentVariables([string]$steamRegistry.SteamPath) }",
     "$libraries = New-Object System.Collections.Generic.List[string]",
     "foreach ($root in $steamRoots) { if (Test-Path -LiteralPath $root) { $libraries.Add($root) }; $vdf = Join-Path $root 'steamapps\\libraryfolders.vdf'; if (Test-Path -LiteralPath $vdf) { $text = Get-Content -LiteralPath $vdf -Raw; foreach ($match in [regex]::Matches($text, '\"path\"\\s+\"([^\"]+)\"')) { $candidate = $match.Groups[1].Value.Replace('\\\\','\\'); if (Test-Path -LiteralPath $candidate) { $libraries.Add($candidate) } } } }",
     "foreach ($library in ($libraries | Select-Object -Unique)) {",
