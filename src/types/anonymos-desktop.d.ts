@@ -5,7 +5,7 @@ export interface AnonymosSystemSnapshot {
   model: string;
   cpu: { name: string; loadPercent: number | null; cores: number; logicalProcessors: number; maxClockMHz: number };
   memory: { totalBytes: number; freeBytes: number; usedBytes: number; usedPercent: number };
-  gpu: Array<{ name: string; driverVersion: string; adapterRamBytes: number | null }>;
+  gpu: Array<{ name: string; driverVersion: string; adapterRamBytes: number | null; loadPercent: number | null; temperatureC: number | null; memoryUsedBytes: number | null; memoryTotalBytes: number | null; telemetrySource: string | null }>;
   disks: Array<{ name: string; label: string | null; sizeBytes: number; freeBytes: number }>;
   os: { caption: string; version: string; build: string; lastBoot: string };
 }
