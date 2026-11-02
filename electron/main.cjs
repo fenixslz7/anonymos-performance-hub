@@ -145,6 +145,7 @@ function registerGameIpc() {
       child.once("error", rejectLaunch);
       child.once("spawn", () => {
         child.unref();
+        void recordAction("Jogo iniciado", game.name, { executable: game.path });
         resolveLaunch({ launched: true, name: game.name, executable: game.path });
       });
     });
@@ -162,6 +163,7 @@ function registerGameIpc() {
     const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false });
     child.once("error", () => {});
     child.unref();
+    void recordAction("Executável iniciado", executable.split(/[\\\\/]/).pop(), { executable: executable });
     return { launched: true, executable };
   });
 }
@@ -209,7 +211,7 @@ function registerCleanupIpc() {
     return runPowerShell(script);
   };
   ipcMain.handle("cleanup:scan", async (_event, categories) => runCleanup(categories, "scan"));
-  ipcMain.handle("cleanup:run", async (_event, categories) => runCleanup(categories, "delete"));
+  ipcMain.handle("cleanup:run", async (_event, categories) => { const report = await runCleanup(categories, "delete"); await recordAction("Limpeza executada", "Arquivos temporários", { deletedFiles: report.deletedFiles, deletedBytes: report.deletedBytes, skippedFiles: report.skippedFiles }); return report; });
 }
 
 function registerPowerIpc() {
@@ -229,6 +231,7 @@ function registerPowerIpc() {
     if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
     if (plan !== "balanced" && plan !== "high") throw new Error("Plano de energia não permitido.");
     await runPowerCfg(["/setactive", POWER_PLANS[plan]]);
+    await recordAction("Plano de energia alterado", plan === "high" ? "Alto desempenho" : "Equilibrado", {});
     return { success: true, plan };
   });
 }
@@ -246,6 +249,27 @@ async function writeJsonFile(path, value) {
   await writeFile(temporary, JSON.stringify(value, null, 2), "utf8");
   await rename(temporary, path);
 }
+
+function actionHistoryFile() { return join(app.getPath("userData"), "action-history.json"); }
+async function recordAction(type, target, details) {
+  try {
+    const history = await readJsonFile(actionHistoryFile(), []);
+    history.unshift({
+      id: require("node:crypto").randomUUID(),
+      capturedAt: new Date().toISOString(),
+      type: String(type),
+      target: String(target || ""),
+      details: details || {},
+    });
+    await writeJsonFile(actionHistoryFile(), history.slice(0, 250));
+  } catch {
+    // O histórico é complementar; uma falha de gravação não desfaz a ação já concluída.
+  }
+}
+function registerHistoryIpc() {
+  ipcMain.handle("history:list", async () => readJsonFile(actionHistoryFile(), []));
+}
+
 function startupBackupFile() { return join(app.getPath("userData"), "startup-backups.json"); }
 function startupBackupDirectory() { return join(app.getPath("userData"), "startup-disabled"); }
 function getUserStartupDirectory() {
@@ -335,6 +359,7 @@ function registerStartupIpc() {
     }
     backups[id] = entry;
     await writeJsonFile(startupBackupFile(), backups);
+    await recordAction("Inicialização desativada", entry.name, { source: entry.source, location: entry.location });
     return { success: true, id: id, name: entry.name };
   });
   ipcMain.handle("startup:restore", async (_event, id) => {
@@ -375,6 +400,7 @@ function registerStartupIpc() {
     }
     delete backups[id];
     await writeJsonFile(startupBackupFile(), backups);
+    await recordAction("Inicialização restaurada", entry.name, { source: entry.source, location: entry.location });
     return { success: true, id: id, name: entry.name };
   });
 }
@@ -408,6 +434,7 @@ function registerProcessControlIpc() {
       "@{ success=$true; pid=$targetId; name=$expectedName } | ConvertTo-Json -Compress"
     ].join("\n");
     await runPowerShell(script);
+    await recordAction("Processo encerrado", request.name, { pid: request.pid });
     return { success: true, pid: request.pid, name: request.name };
   });
 }
@@ -457,11 +484,13 @@ function registerGameBoostIpc() {
       }
     }
     await writeJsonFile(gameBoostStateFile(), { originalScheme: originalScheme, activeScheme: activeScheme, createdScheme: createdScheme, startedAt: new Date().toISOString() });
+    await recordAction("Modo de Jogo ativado", "Plano de energia", { createdTemporaryPlan: createdScheme });
     return { success: true, alreadyActive: false };
   });
   ipcMain.handle("games:boost-stop", async () => {
     const restored = await restoreGameBoostSession();
     if (!restored) throw new Error("Não foi possível restaurar o plano anterior. Verifique os planos disponíveis no Windows.");
+    await recordAction("Modo de Jogo desativado", "Plano de energia", {});
     return { success: true };
   });
 }
@@ -656,6 +685,7 @@ app.whenReady().then(async () => {
   registerProcessControlIpc();
   registerStartupIpc();
   registerGameBoostIpc();
+  registerHistoryIpc();
   registerGameIpc();
   registerCleanupIpc();
   registerPowerIpc();
