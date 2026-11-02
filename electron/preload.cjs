@@ -4,6 +4,7 @@ const desktopApi = Object.freeze({
   getInfo: () => ipcRenderer.invoke("desktop:app:info"),
   getSystemSnapshot: () => ipcRenderer.invoke("system:snapshot"),
   getProcesses: () => ipcRenderer.invoke("system:processes"),
+  getNetworkDiagnostics: () => ipcRenderer.invoke("network:diagnostics"),
   pickAndLaunchGame: () => ipcRenderer.invoke("games:pick-and-launch"),
   getPowerPlan: () => ipcRenderer.invoke("power:get-plan"),
   setPowerPlan: (plan) => ipcRenderer.invoke("power:set-plan", plan),
