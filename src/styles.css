@@ -207,3 +207,18 @@ a:hover .network-link-icon, a[aria-current="page"] .network-link-icon {
   to { transform: rotate(360deg) scale(1); }
 }
 .tree-node-dot { box-shadow: 0 0 12px color-mix(in oklab, var(--primary) 65%, transparent); }
+
+.assistant-launch {
+  position: relative;
+  overflow: hidden;
+}
+.assistant-launch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 20%, rgba(155,112,255,.16) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform .55s ease;
+}
+.assistant-launch:hover::before { transform: translateX(120%); }
