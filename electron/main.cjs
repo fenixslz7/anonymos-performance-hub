@@ -367,50 +367,62 @@ function registerStartupIpc() {
     const item = scan.items.find((entry) => entry.id === id);
     if (!item) throw new Error("A entrada mudou ou não existe mais. Atualize a lista.");
     const backups = await readJsonFile(startupBackupFile(), {});
-    if (backups[id]) throw new Error("Esta entrada já está desativada pelo ANONYMOS.");
-    const entry = { id: id, name: String(item.name), source: item.source, location: item.location };
-    if (item.source === "registry") {
-      const name64 = Buffer.from(String(item.name), "utf8").toString("base64");
-      const command64 = Buffer.from(String(item.command), "utf8").toString("base64");
-      const script = [
-        "$ErrorActionPreference = 'Stop'",
-        "$name = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
-        "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
-        "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
-        "$current = (Get-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop).$name",
-        "if ([string]$current -cne $command) { throw 'O comando de inicialização mudou. Atualize a lista.' }",
-        "Remove-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop",
-        "@{ success=$true } | ConvertTo-Json -Compress"
-      ].join("\n");
-      await runPowerShell(script);
-      entry.command = String(item.command);
-    } else if (item.source === "folder") {
+    if (backups[id]) throw new Error("Esta entrada já possui um backup no ANONYMOS.");
+    const entry = { id, name: String(item.name), source: item.source, location: item.location, command: String(item.command) };
+
+    if (item.source === "folder") {
       const startup = getUserStartupDirectory();
       const original = resolve(startup, String(item.command));
       if (dirname(original).toLowerCase() !== startup.toLowerCase() || ![".lnk", ".url", ".exe", ".bat", ".cmd"].includes(extname(original).toLowerCase())) {
         throw new Error("Caminho da entrada fora da pasta Inicializar permitida.");
       }
-      const backupDirectory = startupBackupDirectory();
-      await mkdir(backupDirectory, { recursive: true });
-      const backupPath = join(backupDirectory, id + extname(original).toLowerCase());
-      try { await stat(original); } catch { throw new Error("O atalho de inicialização não existe mais."); }
-      await rename(original, backupPath);
       entry.originalPath = original;
-      entry.backupPath = backupPath;
-    } else {
+      entry.backupPath = join(startupBackupDirectory(), id + extname(original).toLowerCase());
+    } else if (item.source !== "registry") {
       throw new Error("Tipo de entrada não permitido.");
     }
+
+    // Persist the recovery data BEFORE touching Run or the Startup folder.
     backups[id] = entry;
     await writeJsonFile(startupBackupFile(), backups);
+
+    try {
+      if (item.source === "registry") {
+        const name64 = Buffer.from(String(item.name), "utf8").toString("base64");
+        const command64 = Buffer.from(String(item.command), "utf8").toString("base64");
+        const script = [
+          "$ErrorActionPreference = 'Stop'",
+          "$name = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+          "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
+          "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+          "$current = (Get-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop).$name",
+          "if ([string]$current -cne $command) { throw 'O comando de inicialização mudou. Atualize a lista.' }",
+          "Remove-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop",
+          "@{ success=$true } | ConvertTo-Json -Compress"
+        ].join("\n");
+        await runPowerShell(script);
+      } else {
+        await mkdir(startupBackupDirectory(), { recursive: true });
+        try { await stat(entry.originalPath); } catch { throw new Error("O atalho de inicialização não existe mais."); }
+        await rename(entry.originalPath, entry.backupPath);
+      }
+    } catch (error) {
+      delete backups[id];
+      await writeJsonFile(startupBackupFile(), backups).catch(() => {});
+      throw error;
+    }
+
     await recordAction("Inicialização desativada", entry.name, { source: entry.source, location: entry.location });
-    return { success: true, id: id, name: entry.name };
+    return { success: true, id, name: entry.name };
   });
+
   ipcMain.handle("startup:restore", async (_event, id) => {
     if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
     if (typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id)) throw new Error("Entrada inválida.");
     const backups = await readJsonFile(startupBackupFile(), {});
     const entry = backups[id];
     if (!entry) throw new Error("Backup de inicialização não encontrado.");
+
     if (entry.source === "registry") {
       const name64 = Buffer.from(String(entry.name), "utf8").toString("base64");
       const command64 = Buffer.from(String(entry.command), "utf8").toString("base64");
@@ -419,9 +431,14 @@ function registerStartupIpc() {
         "$name = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
         "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
         "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
-        "if ((Get-ItemProperty -LiteralPath $path -ErrorAction SilentlyContinue).PSObject.Properties.Name -contains $name) { throw 'Já existe uma entrada com este nome. Nada foi sobrescrito.' }",
+        "$existing = Get-ItemProperty -LiteralPath $path -Name $name -ErrorAction SilentlyContinue",
+        "if ($null -ne $existing) {",
+        "  $current = [string]$existing.$name",
+        "  if ($current -ceq $command) { @{ success=$true; alreadyRestored=$true } | ConvertTo-Json -Compress; exit }",
+        "  throw 'Já existe uma entrada com este nome e um comando diferente. Nada foi sobrescrito.'",
+        "}",
         "New-ItemProperty -LiteralPath $path -Name $name -Value $command -PropertyType String -ErrorAction Stop | Out-Null",
-        "@{ success=$true } | ConvertTo-Json -Compress"
+        "@{ success=$true; alreadyRestored=$false } | ConvertTo-Json -Compress"
       ].join("\n");
       await runPowerShell(script);
     } else if (entry.source === "folder") {
@@ -431,21 +448,34 @@ function registerStartupIpc() {
       if (dirname(original).toLowerCase() !== startup.toLowerCase() || dirname(backupPath).toLowerCase() !== resolve(startupBackupDirectory()).toLowerCase()) {
         throw new Error("Backup fora das pastas permitidas.");
       }
-      try {
-        await stat(original);
-        throw new Error("Já existe um arquivo com este nome na pasta Inicializar. Renomeie-o antes de restaurar.");
-      } catch (error) {
-        if (error && error.code !== "ENOENT") throw error;
+
+      let backupExists = true;
+      try { await stat(backupPath); } catch (error) {
+        if (error && error.code === "ENOENT") backupExists = false;
+        else throw error;
       }
-      await rename(backupPath, original);
+      if (backupExists) {
+        try {
+          await stat(original);
+          throw new Error("Já existe um arquivo com este nome na pasta Inicializar. Renomeie-o antes de restaurar.");
+        } catch (error) {
+          if (error && error.code !== "ENOENT") throw error;
+        }
+        await rename(backupPath, original);
+      } else {
+        // A crash may have occurred after the backup record was persisted but before the move.
+        try { await stat(original); } catch { throw new Error("O backup e o arquivo original não foram encontrados. Nada foi removido do registro."); }
+      }
     } else {
       throw new Error("Tipo de backup não reconhecido.");
     }
+
     delete backups[id];
     await writeJsonFile(startupBackupFile(), backups);
     await recordAction("Inicialização restaurada", entry.name, { source: entry.source, location: entry.location });
-    return { success: true, id: id, name: entry.name };
+    return { success: true, id, name: entry.name };
   });
+
 }
 const PROTECTED_PROCESS_NAMES = new Set([
   "system", "idle", "registry", "smss", "csrss", "wininit", "services", "lsass",
