@@ -335,6 +335,9 @@ async function restoreGameBoostSession() {
   if (!state || typeof state.originalScheme !== "string" || !/^[a-f0-9-]{36}$/i.test(state.originalScheme)) return false;
   try {
     await runPowerCfg(["/setactive", state.originalScheme]);
+    if (state.createdScheme && typeof state.activeScheme === "string" && /^[a-f0-9-]{36}$/i.test(state.activeScheme)) {
+      await runPowerCfg(["/delete", state.activeScheme]);
+    }
     await unlink(gameBoostStateFile()).catch(() => {});
     return true;
   } catch { return false; }
@@ -353,8 +356,25 @@ function registerGameBoostIpc() {
     const originalScheme = match && match[0].toLowerCase();
     if (!originalScheme) throw new Error("Não foi possível identificar o plano de energia atual.");
     if (originalScheme === POWER_PLANS.high) throw new Error("O plano Alto desempenho já está ativo.");
-    await runPowerCfg(["/setactive", POWER_PLANS.high]);
-    await writeJsonFile(gameBoostStateFile(), { originalScheme: originalScheme, startedAt: new Date().toISOString() });
+    let activeScheme = POWER_PLANS.high;
+    let createdScheme = false;
+    try {
+      await runPowerCfg(["/setactive", activeScheme]);
+    } catch {
+      const duplicateOutput = await runPowerCfg(["/duplicatescheme", "SCHEME_MIN"]);
+      const duplicateMatch = duplicateOutput.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
+      if (!duplicateMatch) throw new Error("O Windows não conseguiu criar um perfil temporário de alto desempenho.");
+      activeScheme = duplicateMatch[0].toLowerCase();
+      createdScheme = true;
+      try {
+        await runPowerCfg(["/changename", activeScheme, "ANONYMOS Game Mode", "Plano temporário restaurável criado pelo ANONYMOS PERFORMANCE."]);
+        await runPowerCfg(["/setactive", activeScheme]);
+      } catch (error) {
+        await runPowerCfg(["/delete", activeScheme]).catch(() => {});
+        throw error;
+      }
+    }
+    await writeJsonFile(gameBoostStateFile(), { originalScheme: originalScheme, activeScheme: activeScheme, createdScheme: createdScheme, startedAt: new Date().toISOString() });
     return { success: true, alreadyActive: false };
   });
   ipcMain.handle("games:boost-stop", async () => {
@@ -581,7 +601,18 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on("before-quit", () => {
+let restoringBeforeQuit = false;
+app.on("before-quit", (event) => {
+  if (!restoringBeforeQuit) {
+    event.preventDefault();
+    restoringBeforeQuit = true;
+    void restoreGameBoostSession().catch(() => false).finally(() => {
+      quitting = true;
+      if (serverProcess && !serverProcess.killed) serverProcess.kill();
+      app.quit();
+    });
+    return;
+  }
   quitting = true;
   if (serverProcess && !serverProcess.killed) serverProcess.kill();
 });
