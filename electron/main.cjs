@@ -120,6 +120,28 @@ function registerPowerIpc() {
   });
 }
 
+function registerNetworkIpc() {
+  ipcMain.handle("network:diagnostics", async () => {
+    if (process.platform !== "win32") throw new Error("Diagnóstico de rede disponível somente no Windows.");
+    const script = String.raw`
+      $ErrorActionPreference = 'Stop'
+      $targets = @('1.1.1.1','8.8.8.8')
+      $tests = @()
+      foreach ($target in $targets) {
+        $samples = @(Test-Connection -ComputerName $target -Count 4 -ErrorAction SilentlyContinue)
+        $times = @($samples | ForEach-Object { [double]$_.ResponseTime })
+        $received = $times.Count
+        $average = if ($received -gt 0) { [math]::Round(($times | Measure-Object -Average).Average,1) } else { $null }
+        $tests += [pscustomobject]@{ target=$target; sent=4; received=$received; lost=(4-$received); lossPercent=[math]::Round(((4-$received)/4)*100,0); averageMs=$average; samples=$times }
+      }
+      $adapters = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object Status -eq 'Up' | Select-Object -First 8 | ForEach-Object { [pscustomobject]@{ name=$_.Name; description=$_.InterfaceDescription; linkSpeed=$_.LinkSpeed } })
+      $dns = @(Get-DnsClientServerAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.ServerAddresses.Count -gt 0 } | ForEach-Object { [pscustomobject]@{ interface=$_.InterfaceAlias; servers=@($_.ServerAddresses) } })
+      [pscustomobject]@{ capturedAt=(Get-Date).ToString('o'); tests=$tests; adapters=$adapters; dns=$dns } | ConvertTo-Json -Depth 6 -Compress
+    `;
+    return runPowerShell(script);
+  });
+}
+
 function registerWindowIpc() {
   ipcMain.handle("desktop:window:minimize", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -244,6 +266,7 @@ app.whenReady().then(async () => {
   registerSystemIpc();
   registerGameIpc();
   registerPowerIpc();
+  registerNetworkIpc();
   try {
     if (!isDev) await startBundledServer();
     createMainWindow(isDev ? DEV_URL : LOCAL_URL);
