@@ -143,8 +143,8 @@ function Monitor() {
         </section>
         <section className="glass p-4">
           <h2 className="font-semibold">Placas de vídeo</h2>
-          <div className="mt-3 space-y-2">{snapshot.gpu.map((gpu) => <div key={gpu.name} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border p-3 text-sm"><span>{gpu.name}</span><span className="text-muted-foreground">Driver {gpu.driverVersion || "N/D"} · VRAM reportada {gpu.adapterRamBytes ? bytes(gpu.adapterRamBytes) : "N/D"} · Uso {gpu.loadPercent == null ? "N/D" : Math.round(gpu.loadPercent) + "%"} · Temperatura {gpu.temperatureC == null ? "N/D" : gpu.temperatureC + "°C"} · VRAM usada {gpu.memoryUsedBytes == null ? "N/D" : bytes(gpu.memoryUsedBytes) + " / " + bytes(gpu.memoryTotalBytes ?? 0)}</span></div>)}</div>
-          <p className="mt-2 text-xs text-muted-foreground">Uso, temperatura e VRAM dedicada são lidos por NVIDIA SMI quando o driver NVIDIA disponibiliza o utilitário. Em AMD/Intel ou quando o utilitário não está instalado, estes campos aparecem como N/D.</p>
+          <div className="mt-3 space-y-2">{snapshot.gpu.map((gpu) => <div key={gpu.name} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border p-3 text-sm"><span>{gpu.name}</span><span className="text-muted-foreground">Driver {gpu.driverVersion || "N/D"} · VRAM reportada {gpu.adapterRamBytes ? bytes(gpu.adapterRamBytes) : "N/D"} · Uso {gpu.loadPercent == null ? "N/D" : Math.round(gpu.loadPercent) + "%"} · Temperatura {gpu.temperatureC == null ? "N/D" : gpu.temperatureC + "°C"} · VRAM usada {gpu.memoryUsedBytes == null ? "N/D" : bytes(gpu.memoryUsedBytes) + " / " + bytes(gpu.memoryTotalBytes ?? 0)}{gpu.telemetrySource ? " · Fonte: " + gpu.telemetrySource : ""}</span></div>)}</div>
+          <p className="mt-2 text-xs text-muted-foreground">A utilização pode vir do NVIDIA SMI ou do contador GPU Engine do Windows (motor mais ocupado por adaptador). Temperatura e VRAM usada dependem do NVIDIA SMI; quando o driver não fornece esses sensores, aparecem como N/D.</p>
         </section>
       </>}
       <section className="glass overflow-hidden">
