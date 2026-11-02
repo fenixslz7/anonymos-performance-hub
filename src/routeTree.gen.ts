@@ -74,7 +74,6 @@ export interface FileRoutesByFullPath {
   '/limpeza': typeof LimpezaRoute
   '/inicializacao': typeof InicializacaoRoute
   '/historico': typeof HistoricoRoute
-  '/historico': typeof HistoricoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +84,7 @@ export interface FileRoutesByTo {
   '/internet': typeof InternetRoute
   '/limpeza': typeof LimpezaRoute
   '/inicializacao': typeof InicializacaoRoute
+  '/historico': typeof HistoricoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesById {
@@ -96,6 +96,7 @@ export interface FileRoutesById {
   '/internet': typeof InternetRoute
   '/limpeza': typeof LimpezaRoute
   '/inicializacao': typeof InicializacaoRoute
+  '/historico': typeof HistoricoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRouteTypes {
