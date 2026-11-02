@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import type { AnonymosDetectedGame } from "@/types/anonymos-desktop";
-import { FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/jogos")({
   head: () => ({ meta: [{ title: "Game Center — ANONYMOS PERFORMANCE" }, { name: "description", content: "Biblioteca visual, inicialização e modo de jogo reversível." }] }),
@@ -27,6 +26,7 @@ function Games() {
   const [installedGames, setInstalledGames] = useState<AnonymosDetectedGame[]>([]);
   const [detecting, setDetecting] = useState(false);
   const [detectMessage, setDetectMessage] = useState("");
+  const desktopAvailable = typeof window !== "undefined" && Boolean(window.anonymosDesktop);
 
   const detectGames = async () => {
     if (!window.anonymosDesktop || detecting) return;
@@ -137,14 +137,14 @@ function Games() {
             <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-display text-lg font-bold">Modo de Jogo</h2><span className={`rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ${boostActive ? "border-success/30 bg-success/10 text-success" : "border-border text-muted-foreground"}`}>{boostActive ? "ATIVO" : "DESATIVADO"}</span></div><p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">Muda temporariamente o plano de energia do Windows para Alto desempenho. Guarda o plano original e oferece restauração; não desativa serviços nem promete FPS extra.</p></div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {!boostActive ? <button type="button" onClick={() => void startBoost()} disabled={boostBusy || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-50">{boostBusy ? "Ativando…" : <><Zap className="h-4 w-4" /> Ativar Modo de Jogo</>}</button> : <button type="button" onClick={() => void stopBoost()} disabled={boostBusy || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg border border-success/30 px-4 py-2.5 text-xs font-bold text-success transition hover:bg-success/10 disabled:opacity-50">{boostBusy ? "Restaurando…" : <><RotateCcw className="h-4 w-4" /> Restaurar plano original</>}</button>}
+            {!boostActive ? <button type="button" onClick={() => void startBoost()} disabled={boostBusy || !desktopAvailable} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-50">{boostBusy ? "Ativando…" : <><Zap className="h-4 w-4" /> Ativar Modo de Jogo</>}</button> : <button type="button" onClick={() => void stopBoost()} disabled={boostBusy || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg border border-success/30 px-4 py-2.5 text-xs font-bold text-success transition hover:bg-success/10 disabled:opacity-50">{boostBusy ? "Restaurando…" : <><RotateCcw className="h-4 w-4" /> Restaurar plano original</>}</button>}
           </div>
         </div>
         {boostMessage && <p role="status" className="relative mt-3 text-xs text-muted-foreground">{boostMessage}</p>}
       </section>
 
       <section className="glass p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div><button type="button" onClick={() => void detectGames()} disabled={detecting || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${detecting ? "animate-spin" : ""}`} /> {detecting ? "Procurando…" : "Detectar instalações"}</button></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div><button type="button" onClick={() => void detectGames()} disabled={detecting || !desktopAvailable} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${detecting ? "animate-spin" : ""}`} /> {detecting ? "Procurando…" : "Detectar instalações"}</button></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {suggestions.map((game) => (
             <button key={game.name} type="button" onClick={() => { setSelected(game.name); setStatus(""); }} aria-pressed={selected === game.name}
@@ -155,7 +155,7 @@ function Games() {
                 {game.image && <img src={game.image} alt={`Símbolo de ${game.name}`} loading="lazy" className="absolute h-20 w-20 object-contain brightness-0 invert drop-shadow-[0_0_14px_rgba(255,255,255,0.22)] transition duration-300 group-hover:scale-110" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
               </div>
               <div className="mt-2 flex items-center justify-between gap-2"><div className="font-display text-sm font-bold">{game.name}</div>{selected === game.name && <Sparkles className="h-4 w-4 shrink-0 text-primary" />}</div>
-              <div className="mt-1 text-[10px] text-muted-foreground">{selected === game.name ? "Selecionado para localizar o executável" : "Clique para selecionar este jogo"}</div>
+              <div className="mt-1 text-[10px] text-muted-foreground">{selected === game.name ? "Selecionado para iniciar" : "Clique para selecionar este jogo"}</div><div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold tracking-wider">{installedGames.some((entry) => entry.id === game.id) ? <><span className="h-1.5 w-1.5 rounded-full bg-success" /><span className="text-success">INSTALADO</span></> : <><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /><span className="text-muted-foreground">NÃO DETECTADO</span></>}</div>
             </button>
           ))}
         </div>
