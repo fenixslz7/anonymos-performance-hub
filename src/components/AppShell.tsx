@@ -37,8 +37,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <Logo />
         <div className="flex items-center gap-1">
-          <button onClick={() => setOpen(!open)} className="mr-3 flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">
-            <Bot className="h-3.5 w-3.5 text-primary" /> Anonymos IA
+          <button onClick={() => setOpen(!open)} className="assistant-launch mr-3 flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[10px] font-bold tracking-wider transition hover:border-primary/60 hover:bg-primary/10">
+            <span className="relative"><Bot className="h-4 w-4 text-primary" /><span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success)]" /></span> ANONYMOS GUIDE
           </button>
           {desktop && (
             <div className="flex items-center gap-1">
@@ -60,14 +60,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           {nav.map((n) => {
             const active = path === n.to;
             return (
-              <Link key={n.to} to={n.to} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active ? "bg-secondary text-foreground shadow-glow" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
-                <n.icon className={`h-4 w-4 ${active ? "text-primary" : ""} ${n.to === "/internet" ? "network-link-icon" : ""}`} /> {n.label}
+              <Link key={n.to} to={n.to} className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide transition duration-200 ${active ? "bg-primary/10 text-foreground shadow-glow" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
+                <span className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-primary transition-opacity ${active ? "opacity-100" : "opacity-0"}`} /><n.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${active ? "text-primary" : ""} ${n.to === "/internet" ? "network-link-icon" : ""}`} /> {n.label}
               </Link>
             );
           })}
           <div className="mt-auto glass p-3 text-xs">
-            <div className="font-semibold">Anonymos <span className="ml-1 rounded bg-brand px-1.5 py-0.5 text-[9px] text-primary-foreground">PRO</span></div>
-            <div className="text-muted-foreground">Licença ativa</div>
+            <div className="flex items-center gap-2 font-semibold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/15 text-primary"><Hexagon className="h-4 w-4" /></span> ANONYMOS HUB</div>
+            <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-success" /> Painel local · Windows</div>
           </div>
         </aside>
         <main className="min-w-0 flex-1 overflow-y-auto p-5">
