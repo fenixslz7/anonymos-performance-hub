@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn } = require("node:child_process");
-const { appendFile, mkdir } = require("node:fs/promises");
-const { join } = require("node:path");
+const { appendFile, mkdir, readFile, writeFile, rename, stat, unlink } = require("node:fs/promises");
+const { join, resolve, dirname, extname } = require("node:path");
 const { setTimeout: delay } = require("node:timers/promises");
 
 const DEV_URL = process.env.ANONYMOS_DEV_SERVER_URL;
@@ -57,7 +57,7 @@ function registerSystemIpc() {
     const script = String.raw`
       $ErrorActionPreference = 'Stop'
       @(Get-Process | Sort-Object CPU -Descending | Select-Object -First 40 | ForEach-Object {
-        [pscustomobject]@{ pid=$_.Id; name=$_.ProcessName; cpuSeconds=if ($_.CPU) {[math]::Round($_.CPU,1)} else {$null}; memoryBytes=[double]$_.WorkingSet64; responding=$_.Responding }
+        [pscustomobject]@{ pid=$_.Id; name=$_.ProcessName; cpuSeconds=if ($_.CPU) {[math]::Round($_.CPU,1)} else {$null}; memoryBytes=[double]$_.WorkingSet64; responding=$_.Responding; startTime=try {$_.StartTime.ToUniversalTime().ToString('o')} catch {$null} }
       }) | ConvertTo-Json -Depth 3 -Compress
     `;
     const result = await runPowerShell(script);
@@ -148,6 +148,219 @@ function registerPowerIpc() {
     if (plan !== "balanced" && plan !== "high") throw new Error("Plano de energia não permitido.");
     await runPowerCfg(["/setactive", POWER_PLANS[plan]]);
     return { success: true, plan };
+  });
+}
+
+
+function readJsonFile(path, fallback) {
+  return readFile(path, "utf8").then((raw) => JSON.parse(raw)).catch((error) => {
+    if (error && error.code === "ENOENT") return fallback;
+    throw error;
+  });
+}
+async function writeJsonFile(path, value) {
+  await mkdir(dirname(path), { recursive: true });
+  const temporary = path + ".tmp";
+  await writeFile(temporary, JSON.stringify(value, null, 2), "utf8");
+  await rename(temporary, path);
+}
+function startupBackupFile() { return join(app.getPath("userData"), "startup-backups.json"); }
+function startupBackupDirectory() { return join(app.getPath("userData"), "startup-disabled"); }
+function getUserStartupDirectory() {
+  if (process.platform !== "win32" || !process.env.APPDATA) throw new Error("Pasta Inicializar indisponível.");
+  return resolve(process.env.APPDATA, "Microsoft", "Windows", "Start Menu", "Programs", "Startup");
+}
+async function queryStartupItems() {
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    "$items = New-Object System.Collections.Generic.List[object]",
+    "$runPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+    "if (Test-Path -LiteralPath $runPath) {",
+    "  $props = Get-ItemProperty -LiteralPath $runPath",
+    "  foreach ($prop in $props.PSObject.Properties) {",
+    "    if ($prop.Name -like 'PS*') { continue }",
+    "    $command = [string]$prop.Value",
+    "    $key = 'registry|' + $prop.Name + '|' + $command",
+    "    $sha = [System.Security.Cryptography.SHA256]::Create()",
+    "    $id = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($key))).Replace('-','').ToLowerInvariant()",
+    "    $items.Add([pscustomobject]@{ id=$id; name=$prop.Name; command=$command; source='registry'; location='Registro do usuário' })",
+    "  }",
+    "}",
+    "$startup = [Environment]::GetFolderPath('Startup')",
+    "if (Test-Path -LiteralPath $startup) {",
+    "  Get-ChildItem -LiteralPath $startup -File -Force -ErrorAction SilentlyContinue | Where-Object { @('.lnk','.url','.exe','.bat','.cmd') -contains $_.Extension.ToLowerInvariant() } | ForEach-Object {",
+    "    $key = 'folder|' + $_.Name + '|' + $_.FullName",
+    "    $sha = [System.Security.Cryptography.SHA256]::Create()",
+    "    $id = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($key))).Replace('-','').ToLowerInvariant()",
+    "    $items.Add([pscustomobject]@{ id=$id; name=$_.BaseName; command=$_.Name; source='folder'; location='Pasta Inicializar' })",
+    "  }",
+    "}",
+    "[pscustomobject]@{ capturedAt=(Get-Date).ToString('o'); items=@($items.ToArray()) } | ConvertTo-Json -Depth 5 -Compress"
+  ].join("\n");
+  const result = await runPowerShell(script);
+  const rawItems = result && result.items;
+  return { capturedAt: result && result.capturedAt ? result.capturedAt : new Date().toISOString(), items: Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [] };
+}
+function registerStartupIpc() {
+  ipcMain.handle("startup:list", async () => {
+    if (process.platform !== "win32") throw new Error("Gerenciador de inicialização disponível somente no Windows.");
+    const results = await Promise.all([queryStartupItems(), readJsonFile(startupBackupFile(), {})]);
+    return {
+      capturedAt: results[0].capturedAt,
+      items: results[0].items,
+      disabled: Object.values(results[1]).map((entry) => ({ id: entry.id, name: entry.name, source: entry.source, location: entry.location })),
+    };
+  });
+  ipcMain.handle("startup:disable", async (_event, id) => {
+    if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
+    if (typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id)) throw new Error("Entrada de inicialização inválida.");
+    const scan = await queryStartupItems();
+    const item = scan.items.find((entry) => entry.id === id);
+    if (!item) throw new Error("A entrada mudou ou não existe mais. Atualize a lista.");
+    const backups = await readJsonFile(startupBackupFile(), {});
+    if (backups[id]) throw new Error("Esta entrada já está desativada pelo ANONYMOS.");
+    const entry = { id: id, name: String(item.name), source: item.source, location: item.location };
+    if (item.source === "registry") {
+      const name64 = Buffer.from(String(item.name), "utf8").toString("base64");
+      const command64 = Buffer.from(String(item.command), "utf8").toString("base64");
+      const script = [
+        "$ErrorActionPreference = 'Stop'",
+        "$name = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+        "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
+        "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+        "$current = (Get-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop).$name",
+        "if ([string]$current -cne $command) { throw 'O comando de inicialização mudou. Atualize a lista.' }",
+        "Remove-ItemProperty -LiteralPath $path -Name $name -ErrorAction Stop",
+        "@{ success=$true } | ConvertTo-Json -Compress"
+      ].join("\n");
+      await runPowerShell(script);
+      entry.command = String(item.command);
+    } else if (item.source === "folder") {
+      const startup = getUserStartupDirectory();
+      const original = resolve(startup, String(item.command));
+      if (dirname(original).toLowerCase() !== startup.toLowerCase() || ![".lnk", ".url", ".exe", ".bat", ".cmd"].includes(extname(original).toLowerCase())) {
+        throw new Error("Caminho da entrada fora da pasta Inicializar permitida.");
+      }
+      const backupDirectory = startupBackupDirectory();
+      await mkdir(backupDirectory, { recursive: true });
+      const backupPath = join(backupDirectory, id + extname(original).toLowerCase());
+      try { await stat(original); } catch { throw new Error("O atalho de inicialização não existe mais."); }
+      await rename(original, backupPath);
+      entry.originalPath = original;
+      entry.backupPath = backupPath;
+    } else {
+      throw new Error("Tipo de entrada não permitido.");
+    }
+    backups[id] = entry;
+    await writeJsonFile(startupBackupFile(), backups);
+    return { success: true, id: id, name: entry.name };
+  });
+  ipcMain.handle("startup:restore", async (_event, id) => {
+    if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
+    if (typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id)) throw new Error("Entrada inválida.");
+    const backups = await readJsonFile(startupBackupFile(), {});
+    const entry = backups[id];
+    if (!entry) throw new Error("Backup de inicialização não encontrado.");
+    if (entry.source === "registry") {
+      const name64 = Buffer.from(String(entry.name), "utf8").toString("base64");
+      const command64 = Buffer.from(String(entry.command), "utf8").toString("base64");
+      const script = [
+        "$ErrorActionPreference = 'Stop'",
+        "$name = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+        "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + command64 + "'))",
+        "$path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+        "if ((Get-ItemProperty -LiteralPath $path -ErrorAction SilentlyContinue).PSObject.Properties.Name -contains $name) { throw 'Já existe uma entrada com este nome. Nada foi sobrescrito.' }",
+        "New-ItemProperty -LiteralPath $path -Name $name -Value $command -PropertyType String -ErrorAction Stop | Out-Null",
+        "@{ success=$true } | ConvertTo-Json -Compress"
+      ].join("\n");
+      await runPowerShell(script);
+    } else if (entry.source === "folder") {
+      const startup = getUserStartupDirectory();
+      const original = resolve(String(entry.originalPath || ""));
+      const backupPath = resolve(String(entry.backupPath || ""));
+      if (dirname(original).toLowerCase() !== startup.toLowerCase() || dirname(backupPath).toLowerCase() !== resolve(startupBackupDirectory()).toLowerCase()) {
+        throw new Error("Backup fora das pastas permitidas.");
+      }
+      try {
+        await stat(original);
+        throw new Error("Já existe um arquivo com este nome na pasta Inicializar. Renomeie-o antes de restaurar.");
+      } catch (error) {
+        if (error && error.code !== "ENOENT") throw error;
+      }
+      await rename(backupPath, original);
+    } else {
+      throw new Error("Tipo de backup não reconhecido.");
+    }
+    delete backups[id];
+    await writeJsonFile(startupBackupFile(), backups);
+    return { success: true, id: id, name: entry.name };
+  });
+}
+const PROTECTED_PROCESS_NAMES = new Set([
+  "system", "idle", "registry", "smss", "csrss", "wininit", "services", "lsass",
+  "svchost", "winlogon", "dwm", "fontdrvhost", "secure system", "memory compression",
+  "electron", "node", "anonymos performance"
+]);
+function registerProcessControlIpc() {
+  ipcMain.handle("system:terminate-process", async (_event, request) => {
+    if (process.platform !== "win32") throw new Error("Controle de processos disponível somente no Windows.");
+    if (!request || !Number.isSafeInteger(request.pid) || request.pid < 1 ||
+        typeof request.name !== "string" || !/^[a-zA-Z0-9_. -]{1,128}$/.test(request.name) ||
+        typeof request.startTime !== "string" || Number.isNaN(Date.parse(request.startTime))) {
+      throw new Error("Identificação de processo inválida. Atualize a lista.");
+    }
+    if (PROTECTED_PROCESS_NAMES.has(request.name.toLowerCase())) throw new Error("Este processo é protegido pelo ANONYMOS.");
+    const name64 = Buffer.from(request.name, "utf8").toString("base64");
+    const start64 = Buffer.from(request.startTime, "utf8").toString("base64");
+    const script = [
+      "$ErrorActionPreference = 'Stop'",
+      "$targetId = " + String(request.pid),
+      "$expectedName = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+      "$expectedStart = [DateTime]::Parse([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + start64 + "'))).ToUniversalTime()",
+      "$protected = @('system','idle','registry','smss','csrss','wininit','services','lsass','svchost','winlogon','dwm','fontdrvhost','secure system','memory compression','electron','node','anonymos performance')",
+      "if ($protected -contains $expectedName.ToLowerInvariant()) { throw 'Este processo é protegido.' }",
+      "$target = Get-Process -Id $targetId -ErrorAction Stop",
+      "if ($target.ProcessName -cne $expectedName) { throw 'O processo mudou. Atualize a lista.' }",
+      "if ([math]::Abs(($target.StartTime.ToUniversalTime() - $expectedStart).TotalSeconds) -gt 2) { throw 'O PID foi reutilizado. Atualize a lista.' }",
+      "Stop-Process -Id $targetId -ErrorAction Stop",
+      "@{ success=$true; pid=$targetId; name=$expectedName } | ConvertTo-Json -Compress"
+    ].join("\n");
+    await runPowerShell(script);
+    return { success: true, pid: request.pid, name: request.name };
+  });
+}
+function gameBoostStateFile() { return join(app.getPath("userData"), "game-boost-session.json"); }
+async function restoreGameBoostSession() {
+  const state = await readJsonFile(gameBoostStateFile(), null);
+  if (!state || typeof state.originalScheme !== "string" || !/^[a-f0-9-]{36}$/i.test(state.originalScheme)) return false;
+  try {
+    await runPowerCfg(["/setactive", state.originalScheme]);
+    await unlink(gameBoostStateFile()).catch(() => {});
+    return true;
+  } catch { return false; }
+}
+function registerGameBoostIpc() {
+  ipcMain.handle("games:boost-status", async () => {
+    const state = await readJsonFile(gameBoostStateFile(), null);
+    return { active: Boolean(state && state.originalScheme), label: state ? "Modo de jogo ativo" : "Modo de jogo desativado" };
+  });
+  ipcMain.handle("games:boost-start", async () => {
+    if (process.platform !== "win32") throw new Error("Modo de jogo disponível somente no Windows.");
+    const existing = await readJsonFile(gameBoostStateFile(), null);
+    if (existing && existing.originalScheme) return { success: true, alreadyActive: true };
+    const output = await runPowerCfg(["/getactivescheme"]);
+    const match = output.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
+    const originalScheme = match && match[0].toLowerCase();
+    if (!originalScheme) throw new Error("Não foi possível identificar o plano de energia atual.");
+    if (originalScheme === POWER_PLANS.high) throw new Error("O plano Alto desempenho já está ativo.");
+    await runPowerCfg(["/setactive", POWER_PLANS.high]);
+    await writeJsonFile(gameBoostStateFile(), { originalScheme: originalScheme, startedAt: new Date().toISOString() });
+    return { success: true, alreadyActive: false };
+  });
+  ipcMain.handle("games:boost-stop", async () => {
+    const restored = await restoreGameBoostSession();
+    if (!restored) throw new Error("Não foi possível restaurar o plano anterior. Verifique os planos disponíveis no Windows.");
+    return { success: true };
   });
 }
 
@@ -338,11 +551,15 @@ function createMainWindow(url) {
 app.whenReady().then(async () => {
   registerWindowIpc();
   registerSystemIpc();
+  registerProcessControlIpc();
+  registerStartupIpc();
+  registerGameBoostIpc();
   registerGameIpc();
   registerCleanupIpc();
   registerPowerIpc();
   registerNetworkIpc();
   try {
+    await restoreGameBoostSession();
     if (!isDev) await startBundledServer();
     createMainWindow(isDev ? DEV_URL : LOCAL_URL);
   } catch (error) {
