@@ -141,7 +141,7 @@ async function detectInstalledGames() {
 function registerGameIpc() {
   ipcMain.handle("games:list-installed", async () => detectInstalledGames());
   ipcMain.handle("games:launch-detected", async (_event, id) => {
-    const allowedIds = new Set(["fivem", "gtav", "fortnite", "cs2", "valorant"]);
+    const allowedIds = new Set(["fivem", "gtav", "fortnite", "cs2", "valorant", "minecraft"]);
     if (typeof id !== "string" || !allowedIds.has(id)) throw new Error("Jogo não permitido.");
     const result = await detectInstalledGames();
     const game = result.games.find((entry) => entry.id === id);
