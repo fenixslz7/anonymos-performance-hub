@@ -41,6 +41,19 @@ export interface AnonymosProcessInfo {
   cpuSeconds: number | null;
   memoryBytes: number;
   responding: boolean;
+  startTime: string | null;
+}
+export interface AnonymosStartupEntry {
+  id: string;
+  name: string;
+  command: string;
+  source: "registry" | "folder";
+  location: string;
+}
+export interface AnonymosStartupList {
+  capturedAt: string;
+  items: AnonymosStartupEntry[];
+  disabled: Array<{ id: string; name: string; source: "registry" | "folder"; location: string }>;
 }
 declare global {
   interface Window {
@@ -51,6 +64,13 @@ declare global {
       close: () => Promise<boolean>;
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
+      terminateProcess: (request: { pid: number; name: string; startTime: string }) => Promise<{ success: boolean; pid: number; name: string }>;
+      listStartupItems: () => Promise<AnonymosStartupList>;
+      disableStartupItem: (id: string) => Promise<{ success: boolean; id: string; name: string }>;
+      restoreStartupItem: (id: string) => Promise<{ success: boolean; id: string; name: string }>;
+      getGameBoostStatus: () => Promise<{ active: boolean; label: string }>;
+      startGameBoost: () => Promise<{ success: boolean; alreadyActive: boolean }>;
+      stopGameBoost: () => Promise<{ success: boolean }>;
       scanCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       runCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
