@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             const active = path === n.to;
             return (
               <Link key={n.to} to={n.to} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active ? "bg-secondary text-foreground shadow-glow" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
-                <n.icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} /> {n.label}
+                <n.icon className={`h-4 w-4 ${active ? "text-primary" : ""} ${n.to === "/internet" ? "network-link-icon" : ""}`} /> {n.label}
               </Link>
             );
           })}
@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
         <main className="min-w-0 flex-1 overflow-y-auto p-5">
           <nav className="mb-4 flex gap-2 overflow-x-auto md:hidden">
-            {nav.map((n) => <Link key={n.to} to={n.to} className={`rounded-full border border-border px-3 py-1 text-xs ${path === n.to ? "bg-secondary" : ""}`}>{n.label}</Link>)}
+            {nav.map((n) => <Link key={n.to} to={n.to} title={n.to === "/internet" ? "Abrir diagnóstico e velocidade da conexão" : n.label} className={`inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs transition hover:border-primary/50 hover:bg-secondary ${path === n.to ? "bg-secondary" : ""}`}>{n.to === "/internet" ? <Wifi className="network-link-icon h-3.5 w-3.5 text-primary" /> : null}{n.label}</Link>)}
           </nav>
           {children}
         </main>
