@@ -106,8 +106,12 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - Build e instalador verificados em Windows antes de declarar o recurso pronto.
 
 ## Estado
+- Scaffold Electron inicial adicionado em `electron/main.cjs` e `electron/preload.cjs`, com `contextIsolation`, `sandbox`, `nodeIntegration: false` e IPC limitado a controles da janela/informações do app.
+- `vite.config.ts` direciona Nitro para `node-server` para permitir hospedar SSR localmente no desktop.
+- `package.json` recebeu scripts de desenvolvimento desktop e empacotamento NSIS x64.
+- **Ainda não concluído:** dependências/lockfile precisam ser instalados e sincronizados; build, inicialização do servidor empacotado e instalador precisam ser testados em Windows. Não declarar a fase pronta antes desses testes.
 - [x] Auditoria inicial das rotas e componentes atuais.
-- [ ] Fundação desktop Electron e pipeline de empacotamento.
+- [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold adicionado; build e validação Windows pendentes).
 - [ ] Telemetria real.
 - [ ] Processos e inicialização.
 - [ ] Limpeza inteligente.
