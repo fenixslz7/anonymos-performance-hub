@@ -9,6 +9,16 @@ export interface AnonymosSystemSnapshot {
   disks: Array<{ name: string; label: string | null; sizeBytes: number; freeBytes: number }>;
   os: { caption: string; version: string; build: string; lastBoot: string };
 }
+export interface AnonymosSpeedTestResult {
+  provider: string;
+  capturedAt: string;
+  downloadMbps: number;
+  uploadMbps: number;
+  downloadBytes: number;
+  uploadBytes: number;
+  downloadDurationMs: number;
+  uploadDurationMs: number;
+}
 export interface AnonymosNetworkDiagnostics {
   capturedAt: string;
   tests: Array<{ target: string; sent: number; received: number; lost: number; lossPercent: number; averageMs: number | null; samples: number[] }>;
@@ -32,6 +42,7 @@ declare global {
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
+      runSpeedTest: () => Promise<AnonymosSpeedTestResult>;
       pickAndLaunchGame: () => Promise<{ launched: boolean; executable?: string; reason?: string }>;
       getPowerPlan: () => Promise<{ activeId: string | null; activeName: string; options: Array<{ id: string; label: string }> }>;
       setPowerPlan: (plan: "balanced" | "high") => Promise<{ success: boolean; plan: string }>;
