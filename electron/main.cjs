@@ -121,6 +121,49 @@ function registerPowerIpc() {
 }
 
 function registerNetworkIpc() {
+
+  ipcMain.handle("network:speed-test", async () => {
+    if (process.platform !== "win32") throw new Error("Teste de velocidade disponível somente no aplicativo Windows.");
+    const endpoint = "https://speed.cloudflare.com";
+    const timeout = 45000;
+    const startedAt = new Date().toISOString();
+    const downloadBytesRequested = 8 * 1024 * 1024;
+    const downloadStart = process.hrtime.bigint();
+    const downloadResponse = await fetch(`${endpoint}/__down?bytes=${downloadBytesRequested}&cachebust=${Date.now()}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeout),
+      headers: { "Cache-Control": "no-cache" },
+    });
+    if (!downloadResponse.ok) throw new Error(`Servidor de teste recusou o download (HTTP ${downloadResponse.status}).`);
+    const downloaded = await downloadResponse.arrayBuffer();
+    const downloadSeconds = Number(process.hrtime.bigint() - downloadStart) / 1e9;
+    const downloadMbps = downloaded.byteLength * 8 / downloadSeconds / 1e6;
+
+    const uploadBytes = 3 * 1024 * 1024;
+    const payload = Buffer.alloc(uploadBytes, 0x61);
+    const uploadStart = process.hrtime.bigint();
+    const uploadResponse = await fetch(`${endpoint}/__up?cachebust=${Date.now()}`, {
+      method: "POST",
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeout),
+      headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-cache" },
+      body: payload,
+    });
+    if (!uploadResponse.ok) throw new Error(`Servidor de teste recusou o upload (HTTP ${uploadResponse.status}).`);
+    await uploadResponse.arrayBuffer();
+    const uploadSeconds = Number(process.hrtime.bigint() - uploadStart) / 1e9;
+    const uploadMbps = uploadBytes * 8 / uploadSeconds / 1e6;
+    return {
+      provider: "Cloudflare Speed Test",
+      capturedAt: startedAt,
+      downloadMbps: Number(downloadMbps.toFixed(2)),
+      uploadMbps: Number(uploadMbps.toFixed(2)),
+      downloadBytes: downloaded.byteLength,
+      uploadBytes,
+      downloadDurationMs: Math.round(downloadSeconds * 1000),
+      uploadDurationMs: Math.round(uploadSeconds * 1000),
+    };
+  });
   ipcMain.handle("network:diagnostics", async () => {
     if (process.platform !== "win32") throw new Error("Diagnóstico de rede disponível somente no Windows.");
     const script = String.raw`
