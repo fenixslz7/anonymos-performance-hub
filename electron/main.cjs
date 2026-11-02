@@ -57,7 +57,7 @@ function registerSystemIpc() {
     const script = String.raw`
       $ErrorActionPreference = 'Stop'
       @(Get-Process | Sort-Object CPU -Descending | Select-Object -First 40 | ForEach-Object {
-        [pscustomobject]@{ pid=$_.Id; name=$_.ProcessName; cpuSeconds=if ($_.CPU) {[math]::Round($_.CPU,1)} else {$null}; memoryBytes=[double]$_.WorkingSet64; responding=$_.Responding; startTime=try {$_.StartTime.ToUniversalTime().ToString('o')} catch {$null} }
+        [pscustomobject]@{ pid=$_.Id; name=$_.ProcessName; cpuSeconds=if ($_.CPU) {[math]::Round($_.CPU,1)} else {$null}; memoryBytes=[double]$_.WorkingSet64; responding=$_.Responding; startTime=$(try {$_.StartTime.ToUniversalTime().ToString('o')} catch {$null}) }
       }) | ConvertTo-Json -Depth 3 -Compress
     `;
     const result = await runPowerShell(script);
