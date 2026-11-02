@@ -149,3 +149,61 @@ a:hover .network-link-icon, a[aria-current="page"] .network-link-icon {
   0%, 100% { opacity: .78; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.18); }
 }
+
+.dashboard-hero {
+  isolation: isolate;
+  box-shadow: inset 0 0 90px rgba(76, 39, 152, .16), 0 20px 60px rgba(0, 0, 0, .24);
+}
+.hero-scan {
+  background: repeating-linear-gradient(180deg, transparent 0 5px, rgba(155, 112, 255, .08) 6px, transparent 7px 12px);
+  mask-image: linear-gradient(to right, transparent, black 55%, black);
+  animation: hero-scan-move 12s linear infinite;
+}
+.hero-title-glow {
+  background: linear-gradient(100deg, #c4a9ff 10%, #8e67ff 45%, #67d9ff 85%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 20px rgba(145, 101, 255, .3));
+}
+.hardware-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(155, 112, 255, .45), transparent);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.hardware-card:hover::after { opacity: 1; }
+.module-tile { position: relative; isolation: isolate; }
+.module-tile::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(circle at 20% 0%, rgba(145, 102, 255, .16), transparent 60%);
+  transition: opacity .3s ease;
+}
+.module-tile:hover::before { opacity: 1; }
+.assistant-orb { filter: drop-shadow(0 0 22px rgba(141, 95, 255, .28)); }
+.assistant-orb-ring {
+  border-left-color: transparent;
+  border-bottom-color: rgba(34, 211, 238, .45);
+  animation: assistant-orbit 8s linear infinite;
+}
+.assistant-orb-ring-delayed {
+  animation-duration: 5s;
+  animation-direction: reverse;
+}
+@keyframes hero-scan-move {
+  from { transform: translateY(-16px); }
+  to { transform: translateY(16px); }
+}
+@keyframes assistant-orbit {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.04); }
+  to { transform: rotate(360deg) scale(1); }
+}
+.tree-node-dot { box-shadow: 0 0 12px color-mix(in oklab, var(--primary) 65%, transparent); }
