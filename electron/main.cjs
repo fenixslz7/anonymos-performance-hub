@@ -13,6 +13,58 @@ let mainWindow;
 let serverProcess;
 let quitting = false;
 
+
+const { execFile } = require("node:child_process");
+const { promisify } = require("node:util");
+const execFileAsync = promisify(execFile);
+
+async function runPowerShell(script) {
+  if (process.platform !== "win32") throw new Error("A telemetria nativa está disponível somente no Windows.");
+  const { stdout } = await execFileAsync("powershell.exe", [
+    "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script
+  ], { windowsHide: true, timeout: 12000, maxBuffer: 2 * 1024 * 1024 });
+  return JSON.parse(stdout.trim());
+}
+
+function registerSystemIpc() {
+  ipcMain.handle("system:snapshot", async () => {
+    const script = String.raw`
+      $ErrorActionPreference = 'Stop'
+      $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+      $os = Get-CimInstance Win32_OperatingSystem
+      $cs = Get-CimInstance Win32_ComputerSystem
+      $gpu = @(Get-CimInstance Win32_VideoController | ForEach-Object { [pscustomobject]@{ name=$_.Name; driverVersion=$_.DriverVersion; adapterRamBytes=$_.AdapterRAM } })
+      $disks = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { [pscustomobject]@{ name=$_.DeviceID; label=$_.VolumeName; sizeBytes=[double]$_.Size; freeBytes=[double]$_.FreeSpace } })
+      $memoryTotal = [double]$cs.TotalPhysicalMemory
+      $memoryFree = [double]$os.FreePhysicalMemory * 1024
+      $result = [pscustomobject]@{
+        capturedAt = (Get-Date).ToString('o')
+        computer = $cs.Name
+        manufacturer = $cs.Manufacturer
+        model = $cs.Model
+        cpu = [pscustomobject]@{ name=$cpu.Name.Trim(); loadPercent=$cpu.LoadPercentage; cores=$cpu.NumberOfCores; logicalProcessors=$cpu.NumberOfLogicalProcessors; maxClockMHz=$cpu.MaxClockSpeed }
+        memory = [pscustomobject]@{ totalBytes=$memoryTotal; freeBytes=$memoryFree; usedBytes=($memoryTotal-$memoryFree); usedPercent=[math]::Round((($memoryTotal-$memoryFree)/$memoryTotal)*100,1) }
+        gpu = $gpu
+        disks = $disks
+        os = [pscustomobject]@{ caption=$os.Caption; version=$os.Version; build=$os.BuildNumber; lastBoot=(($os.LastBootUpTime).ToString('o')) }
+      }
+      $result | ConvertTo-Json -Depth 5 -Compress
+    `;
+    return runPowerShell(script);
+  });
+
+  ipcMain.handle("system:processes", async () => {
+    const script = String.raw`
+      $ErrorActionPreference = 'Stop'
+      @(Get-Process | Sort-Object CPU -Descending | Select-Object -First 40 | ForEach-Object {
+        [pscustomobject]@{ pid=$_.Id; name=$_.ProcessName; cpuSeconds=if ($_.CPU) {[math]::Round($_.CPU,1)} else {$null}; memoryBytes=[double]$_.WorkingSet64; responding=$_.Responding }
+      }) | ConvertTo-Json -Depth 3 -Compress
+    `;
+    const result = await runPowerShell(script);
+    return Array.isArray(result) ? result : result ? [result] : [];
+  });
+}
+
 function registerWindowIpc() {
   ipcMain.handle("desktop:window:minimize", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -134,6 +186,7 @@ function createMainWindow(url) {
 
 app.whenReady().then(async () => {
   registerWindowIpc();
+  registerSystemIpc();
   try {
     if (!isDev) await startBundledServer();
     createMainWindow(isDev ? DEV_URL : LOCAL_URL);
