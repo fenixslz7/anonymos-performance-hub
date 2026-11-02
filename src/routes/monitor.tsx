@@ -74,7 +74,7 @@ function Monitor() {
       {snapshot && <HoneycombPanel metrics={[
         { id: "cpu", label: "CPU", value: percent(snapshot.cpu.loadPercent), detail: snapshot.cpu.name, icon: Cpu },
         { id: "ram", label: "RAM", value: percent(snapshot.memory.usedPercent), detail: `${bytes(snapshot.memory.usedBytes)} usados de ${bytes(snapshot.memory.totalBytes)}`, icon: MemoryStick },
-        { id: "gpu", label: "GPU", value: `${snapshot.gpu.length} detectada(s)`, detail: snapshot.gpu.map((gpu) => gpu.name).join(" · ") || "Não identificado", icon: MonitorCog },
+        { id: "gpu", label: "GPU", value: snapshot.gpu.some((gpu) => gpu.loadPercent != null) ? Math.round(Math.max(...snapshot.gpu.map((gpu) => gpu.loadPercent ?? 0))) + "%" : `${snapshot.gpu.length} detectada(s)`, detail: snapshot.gpu.map((gpu) => gpu.name + (gpu.temperatureC == null ? "" : " · " + gpu.temperatureC + "°C")).join(" · ") || "Não identificado", icon: MonitorCog },
         { id: "ssd", label: "DISCOS", value: `${snapshot.disks.length} unidade(s)`, detail: snapshot.disks.map((disk) => `${disk.name}: ${bytes(disk.freeBytes)} livres`).join(" · ") || "Nenhuma unidade detectada", icon: HardDrive },
         { id: "net", label: "REDE", value: "Abrir", detail: "Diagnóstico de latência, perda de pacotes, DNS e velocidade.", icon: Wifi },
       ]} />}
@@ -105,8 +105,8 @@ function Monitor() {
         </section>
         <section className="glass p-4">
           <h2 className="font-semibold">Placas de vídeo</h2>
-          <div className="mt-3 space-y-2">{snapshot.gpu.map((gpu) => <div key={gpu.name} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border p-3 text-sm"><span>{gpu.name}</span><span className="text-muted-foreground">Driver {gpu.driverVersion || "N/D"} · VRAM reportada {gpu.adapterRamBytes ? bytes(gpu.adapterRamBytes) : "N/D"}</span></div>)}</div>
-          <p className="mt-2 text-xs text-muted-foreground">Uso e temperatura da GPU dependem de interfaces específicas do fabricante e ainda não são reportados por esta coleta CIM.</p>
+          <div className="mt-3 space-y-2">{snapshot.gpu.map((gpu) => <div key={gpu.name} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border p-3 text-sm"><span>{gpu.name}</span><span className="text-muted-foreground">Driver {gpu.driverVersion || "N/D"} · VRAM reportada {gpu.adapterRamBytes ? bytes(gpu.adapterRamBytes) : "N/D"} · Uso {gpu.loadPercent == null ? "N/D" : Math.round(gpu.loadPercent) + "%"} · Temperatura {gpu.temperatureC == null ? "N/D" : gpu.temperatureC + "°C"} · VRAM usada {gpu.memoryUsedBytes == null ? "N/D" : bytes(gpu.memoryUsedBytes) + " / " + bytes(gpu.memoryTotalBytes ?? 0)}</span></div>)}</div>
+          <p className="mt-2 text-xs text-muted-foreground">Uso, temperatura e VRAM dedicada são lidos por NVIDIA SMI quando o driver NVIDIA disponibiliza o utilitário. Em AMD/Intel ou quando o utilitário não está instalado, estes campos aparecem como N/D.</p>
         </section>
       </>}
       <section className="glass overflow-hidden">
