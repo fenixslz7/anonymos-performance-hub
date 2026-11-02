@@ -5,7 +5,7 @@ export function useSeries(len = 40, base = 30, jitter = 10, ms = 1000) {
   useEffect(() => {
     const id = setInterval(() => {
       setData((d) => {
-        const last = d[d.length - 1];
+        const last = d[d.length - 1] ?? base;
         const next = Math.max(2, Math.min(98, last + (Math.random() - 0.5) * jitter + (base - last) * 0.1));
         return [...d.slice(1), next];
       });

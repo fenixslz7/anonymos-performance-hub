@@ -45,7 +45,7 @@ function Tree() {
   );
   const lines = (side: "l" | "r") => left.map((_, i) => {
     const y = 10 + i * 20;
-    return <path key={i} d={side === "l" ? `M0 ${y} C 50 ${y}, 50 50, 100 50` : `M100 ${y} C 50 ${y}, 50 50, 0 50`} fill="none" stroke={on[(side === "l" ? left : right)[i].id] ? "var(--primary)" : "var(--border)"} strokeWidth="0.6" vectorEffect="non-scaling-stroke" style={{ strokeWidth: 2 }} />;
+    return <path key={i} d={side === "l" ? `M0 ${y} C 50 ${y}, 50 50, 100 50` : `M100 ${y} C 50 ${y}, 50 50, 0 50`} fill="none" stroke={on[(side === "l" ? left : right)[i]!.id] ? "var(--primary)" : "var(--border)"} strokeWidth="0.6" vectorEffect="non-scaling-stroke" style={{ strokeWidth: 2 }} />;
   });
   return (
     <div>

@@ -47,7 +47,7 @@ function ActionCard({ title, task, button, result }: { title: string; task: stri
 
 function Dashboard() {
   const gpu = useSeries(50, 30, 12);
-  const now = Math.round(gpu[gpu.length - 1]);
+  const now = Math.round(gpu[gpu.length - 1] ?? 0);
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-4">

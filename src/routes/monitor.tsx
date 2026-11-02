@@ -58,7 +58,7 @@ function Monitor() {
       <div className="flex flex-col gap-4">
         <section className="glass p-4">
           <div className="text-sm font-semibold">Uso de CPU</div><div className="text-xs text-muted-foreground">Em tempo real · 8 núcleos</div>
-          <div className="mt-2 font-display text-3xl font-bold">{Math.round(cpu[cpu.length - 1])} %</div>
+          <div className="mt-2 font-display text-3xl font-bold">{Math.round(cpu[cpu.length - 1] ?? 0)} %</div>
           <LineChart data={cpu} height={110} />
         </section>
         <section className="glass space-y-3 p-4 text-sm">
