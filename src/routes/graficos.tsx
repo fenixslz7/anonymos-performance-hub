@@ -31,9 +31,11 @@ const games = [
 ];
 
 function Graphics() {
-  const [values, setValues] = useState<VisualProfile>(presets["Padrão"]!);
-  const [activePreset, setActivePreset] = useState("Padrão");
+  const [profiles, setProfiles] = useState<Record<string, { values: VisualProfile; preset: string }>>({});
   const [selectedGame, setSelectedGame] = useState("FiveM");
+  const currentProfile = profiles[selectedGame] ?? { values: presets["Padrão"]!, preset: "Padrão" };
+  const values = currentProfile.values;
+  const activePreset = currentProfile.preset;
   const rows: [keyof VisualProfile, string, number, string][] = [
     ["sat", "Saturação", 200, "Intensidade geral das cores"],
     ["con", "Contraste", 200, "Diferença entre áreas claras e escuras"],
@@ -41,7 +43,7 @@ function Graphics() {
     ["gamma", "Gama", 200, "Ajuste de tons médios"],
     ["vib", "Vibrance digital", 100, "Realce de cores menos saturadas"],
   ];
-  const applyPreset = (name: string) => { setValues(presets[name]!); setActivePreset(name); };
+  const applyPreset = (name: string) => { setProfiles((current) => ({ ...current, [selectedGame]: { values: presets[name]!, preset: name } })); };
 
   return (
     <div className="mx-auto max-w-[1450px] space-y-5">
@@ -77,7 +79,7 @@ function Graphics() {
           <div className="space-y-5">
             {rows.map(([key, label, max, description]) => <label key={key} className="block">
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{label}</span><span className="rounded-md border border-border bg-background px-2 py-1 font-mono text-[10px] tabular-nums text-primary">{values[key]}</span></div>
-              <input type="range" min={0} max={max} value={values[key]} onChange={(event) => { setValues({ ...values, [key]: Number(event.target.value) }); setActivePreset("Personalizado"); }} className="mt-2 w-full cursor-pointer accent-primary" />
+              <input type="range" min={0} max={max} value={values[key]} onChange={(event) => { setProfiles((current) => ({ ...current, [selectedGame]: { values: { ...values, [key]: Number(event.target.value) }, preset: "Personalizado" } })); }} className="mt-2 w-full cursor-pointer accent-primary" />
               <p className="mt-1 text-[10px] text-muted-foreground">{description}</p>
             </label>)}
           </div>
