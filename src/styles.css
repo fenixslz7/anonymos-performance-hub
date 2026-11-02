@@ -123,3 +123,16 @@
 @utility glass { background: var(--card); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: var(--radius-xl); }
 body { font-family: var(--font-sans); background-image: radial-gradient(ellipse at top left, color-mix(in oklab, var(--primary) 18%, transparent), transparent 55%), radial-gradient(ellipse at bottom right, color-mix(in oklab, var(--primary-glow) 12%, transparent), transparent 50%); min-height: 100vh; }
 @keyframes orb { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+
+.hive-cell {
+  clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+  background: linear-gradient(145deg, color-mix(in oklab, var(--primary) 13%, var(--card)), var(--card));
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--primary) 12%, transparent));
+}
+.hive-cell:hover, .hive-cell-active {
+  background: linear-gradient(145deg, color-mix(in oklab, var(--primary) 28%, var(--card)), color-mix(in oklab, var(--primary-glow) 10%, var(--card)));
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--primary) 32%, transparent));
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
