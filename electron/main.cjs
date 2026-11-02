@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn } = require("node:child_process");
+const { Worker } = require("node:worker_threads");
 const { appendFile, mkdir, readFile, writeFile, rename, stat, unlink } = require("node:fs/promises");
 const { join, resolve, dirname, extname } = require("node:path");
 const { setTimeout: delay } = require("node:timers/promises");
@@ -266,6 +267,48 @@ async function recordAction(type, target, details) {
     // O histórico é complementar; uma falha de gravação não desfaz a ação já concluída.
   }
 }
+function registerBenchmarkIpc() {
+  ipcMain.handle("benchmark:run", async () => {
+    const worker = new Worker(join(__dirname, "benchmark-worker.cjs"));
+    return new Promise((resolveBenchmark, rejectBenchmark) => {
+      let settled = false;
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        void worker.terminate();
+        rejectBenchmark(new Error("O benchmark excedeu o tempo limite e foi interrompido."));
+      }, 15000);
+      const finish = () => clearTimeout(timeout);
+      worker.once("message", async (result) => {
+        if (settled) return;
+        settled = true;
+        finish();
+        if (result && result.error) {
+          rejectBenchmark(new Error(result.error));
+          return;
+        }
+        await recordAction("Benchmark CPU/RAM concluído", "Benchmark local", {
+          cpuMiBPerSecond: result.cpu.mebibytesPerSecond,
+          memoryMiBPerSecond: result.memory.mebibytesPerSecond,
+        });
+        resolveBenchmark(result);
+      });
+      worker.once("error", (error) => {
+        if (settled) return;
+        settled = true;
+        finish();
+        rejectBenchmark(error);
+      });
+      worker.once("exit", (code) => {
+        if (settled || code === 0) return;
+        settled = true;
+        finish();
+        rejectBenchmark(new Error("O processo de benchmark terminou inesperadamente."));
+      });
+    });
+  });
+}
+
 function registerHistoryIpc() {
   ipcMain.handle("history:list", async () => readJsonFile(actionHistoryFile(), []));
 }
@@ -686,6 +729,7 @@ app.whenReady().then(async () => {
   registerStartupIpc();
   registerGameBoostIpc();
   registerHistoryIpc();
+  registerBenchmarkIpc();
   registerGameIpc();
   registerCleanupIpc();
   registerPowerIpc();
