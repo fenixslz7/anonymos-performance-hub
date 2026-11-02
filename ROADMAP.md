@@ -14,7 +14,7 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - Uso, temperatura e VRAM dedicada são consultados via NVIDIA SMI quando o driver NVIDIA disponibiliza o utilitário; em AMD/Intel ou sem esse utilitário, os campos permanecem N/D. CPU por processo é tempo acumulado, não percentual instantâneo.
 - Otimização aplica de verdade somente os planos de energia Equilibrado/Alto desempenho via powercfg, após confirmação. Outros ramos são informativos e não fingem alterar o Windows.
 - Gráficos mantém perfis visuais independentes por jogo nesta sessão e aplica os sliders apenas à imagem de prévia; não altera o driver, monitor ou jogo.
-- Game Center oferece cartões visuais de FiveM, GTA V, Fortnite, Counter-Strike 2 e Valorant, procura executáveis em diretórios comuns Steam/Epic/Riot/FiveM e permite seleção manual. O Modo de Jogo troca temporariamente para um plano de alto desempenho, salva o plano original e o restaura ao fechar o app ou manualmente; não altera FPS, serviços ou prioridade de processo.
+- Game Center oferece cartões visuais com ícones próprios para FiveM, GTA V, Fortnite, Counter-Strike 2, Valorant e Minecraft; procura executáveis em diretórios comuns Steam/Epic/Riot/FiveM e o Minecraft Launcher em locais comuns, além de permitir seleção manual. O Modo de Jogo troca temporariamente para um plano de alto desempenho, salva o plano original e o restaura ao fechar o app ou manualmente; não altera FPS, serviços ou prioridade de processo.
 - Assistente local consulta snapshot real de CPU/RAM/GPU/discos quando disponível e responde por regras locais; não é um modelo de IA conectado nem executa alterações.
 - Perfis Gráficos por jogo são persistidos no armazenamento local do navegador; sliders alteram a prévia, não o driver nem o jogo.
 - Internet mede latência/perda de pacotes, adaptadores, DNS e velocidade por transferência real. Não garante redução de ping.
@@ -119,7 +119,7 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - Os controles minimizar/maximizar/fechar da janela agora usam a API segura do preload no desktop; ficam ocultos no preview web.
 - Foi adicionado pipeline Windows para instalar dependências, executar testes e gerar o instalador como artefato do GitHub Actions. A execução real do pipeline ainda precisa ser observada após o push.
 - [x] Auditoria inicial das rotas e componentes atuais.
-- [x] Primeira camada visual de jogos: cartões individuais com símbolos FiveM, Fortnite e Counter-Strike 2 e seleção de jogo.
+- [x] Biblioteca visual de jogos com ícones de FiveM, GTA V/Rockstar, Fortnite, Counter-Strike 2, Valorant e Minecraft (SVG local original do bloco de grama), seleção de jogo e fallback durante carregamento das imagens.
 - [x] Colmeia hexagonal interativa no dashboard ligada aos valores reais de CPU, RAM, GPU e discos; rede direciona ao diagnóstico dedicado.
 - [x] Ícone de Internet interativo na navegação, com animação de foco/seleção; a animação não representa um teste de conectividade.
 - [x] Scaffold desktop Electron, preload isolado, IPC allowlist e pipeline de instalador Windows; a execução automatizada gera instalador como artefato. Teste físico de instalação/uso ainda pendente.
