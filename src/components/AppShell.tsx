@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { LayoutDashboard, Hexagon, GitBranch, SlidersHorizontal, Gamepad2, Minus, Square, X, Bot, Wifi, Trash2, Power, History } from "lucide-react";
+import { LayoutDashboard, Hexagon, GitBranch, SlidersHorizontal, Gamepad2, Minus, Square, X, Bot, Wifi, Trash2, Power, History, Gauge } from "lucide-react";
 import { Assistant } from "./Assistant";
 
 const nav = [
@@ -13,6 +13,7 @@ const nav = [
   { to: "/limpeza", label: "Limpeza", icon: Trash2 },
   { to: "/inicializacao", label: "Inicialização", icon: Power },
   { to: "/historico", label: "Histórico", icon: History },
+  { to: "/benchmark", label: "Benchmark", icon: Gauge },
 ] as const;
 
 export function Logo() {
