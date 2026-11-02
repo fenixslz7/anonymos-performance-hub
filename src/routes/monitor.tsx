@@ -1,77 +1,95 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { LineChart, useSeries } from "@/lib/live-charts";
+import { useEffect, useState } from "react";
+import type { AnonymosProcessInfo, AnonymosSystemSnapshot } from "@/types/anonymos-desktop";
 
 export const Route = createFileRoute("/monitor")({
-  head: () => ({
-    meta: [
-      { title: "Monitor em tempo real — Anonymos Performance" },
-      { name: "description", content: "Mapa hexagonal dos processos e threads do sistema em tempo real." },
-      { property: "og:title", content: "Monitor em tempo real — Anonymos Performance" },
-      { property: "og:description", content: "Veja cada processo do seu PC em uma colmeia interativa." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Monitor do sistema — ANONYMOS PERFORMANCE" }, { name: "description", content: "Telemetria nativa do Windows e lista de processos." }] }),
   component: Monitor,
 });
 
-const names = ["chrome.exe", "Discord.exe", "svchost.exe", "explorer.exe", "SrTasks.exe", "steam.exe", "dwm.exe", "RuntimeBroker.exe", "csrss.exe", "OneDrive.exe", "Spotify.exe", "nvcontainer.exe"];
-const R = 9, ROWS = 26, COLS = 34;
+const bytes = (value: number) => {
+  if (!Number.isFinite(value) || value < 0) return "—";
+  const units = ["B", "KB", "GB", "TB"];
+  let n = value, i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
+const percent = (value: number | null | undefined) => value == null ? "N/D" : `${Math.round(value)}%`;
 
 function Monitor() {
-  const cells = useMemo(() => {
-    const out: { x: number; y: number; d: number; name: string; pid: number }[] = [];
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const x = c * R * 1.75 + (r % 2) * R * 0.875 + R, y = r * R * 1.5 + R;
-      const d = Math.hypot(c - COLS / 2, (r - ROWS / 2) * 1.15);
-      if (d < 15) out.push({ x, y, d, name: names[(r * 7 + c) % names.length]!, pid: 1000 + r * 97 + c * 13 });
-    }
-    return out;
-  }, []);
-  const [load, setLoad] = useState<number[]>(() => cells.map(() => 0));
-  const [hover, setHover] = useState<number | null>(null);
-  useEffect(() => {
-    const tick = () => setLoad(cells.map((c) => (c.d < 2 ? 40 + Math.random() * 50 : c.d < 8 ? Math.random() * 25 : Math.random() < 0.03 ? 30 : Math.random() * 3)));
-    tick(); const id = setInterval(tick, 1500); return () => clearInterval(id);
-  }, [cells]);
-  const color = (v: number, d: number) => v > 60 ? "var(--destructive)" : v > 30 ? "var(--warning)" : d < 3 ? "var(--accent)" : d < 9 ? "var(--success)" : "var(--muted)";
-  const cpu = useSeries(80, 12, 8, 700);
-  const ram = 70;
-  const h = cells[hover ?? -1];
+  const [snapshot, setSnapshot] = useState<AnonymosSystemSnapshot | null>(null);
+  const [processes, setProcesses] = useState<AnonymosProcessInfo[]>([]);
+  const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
 
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      const api = window.anonymosDesktop;
+      if (!api) { setError("A telemetria nativa está disponível no aplicativo instalado para Windows."); return; }
+      try {
+        const [nextSnapshot, nextProcesses] = await Promise.all([api.getSystemSnapshot(), api.getProcesses()]);
+        if (!active) return;
+        setSnapshot(nextSnapshot);
+        setProcesses(nextProcesses);
+        setUpdatedAt(new Date().toLocaleTimeString());
+        setError("");
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : "Não foi possível consultar o Windows.");
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 5000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+
+  const memory = snapshot?.memory;
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-      <section className="glass relative p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3"><h1 className="font-display text-lg font-bold">Processos</h1><span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-success" />{cells.length} a correr · 3507 threads</span></div>
-          <span className="rounded-md border border-border px-2 py-1 text-xs">Em tempo real</span>
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div><h1 className="font-display text-2xl font-bold">Monitor do sistema</h1><p className="text-sm text-muted-foreground">Dados coletados diretamente do Windows, sem métricas simuladas.</p></div>
+        <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{updatedAt ? `Atualizado às ${updatedAt}` : "Aguardando telemetria"}</span>
+      </header>
+      {error && <section className="glass border border-warning/40 p-4 text-sm"><div className="font-semibold">Telemetria indisponível</div><p className="mt-1 text-muted-foreground">{error}</p></section>}
+      {snapshot && <>
+        <section className="glass p-4">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Computador</div>
+          <div className="mt-1 font-display text-xl font-bold">{snapshot.computer}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{snapshot.manufacturer} {snapshot.model} · {snapshot.os.caption} (build {snapshot.os.build})</div>
+        </section>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Metric title="CPU" value={percent(snapshot.cpu.loadPercent)} detail={snapshot.cpu.name} />
+          <Metric title="Memória RAM" value={percent(memory?.usedPercent)} detail={`${bytes(memory?.usedBytes ?? 0)} usados de ${bytes(memory?.totalBytes ?? 0)}`} />
+          <Metric title="Núcleos / threads" value={`${snapshot.cpu.cores} / ${snapshot.cpu.logicalProcessors}`} detail={`Máximo ${snapshot.cpu.maxClockMHz} MHz`} />
+          <Metric title="Adaptadores gráficos" value={String(snapshot.gpu.length)} detail={snapshot.gpu.map((g) => g.name).join(" · ") || "Não identificado"} />
         </div>
-        <svg viewBox={`0 0 ${COLS * R * 1.75 + R * 2} ${ROWS * R * 1.5 + R}`} className="mx-auto mt-4 w-full max-w-2xl">
-          {cells.map((c, i) => {
-            const pts = Array.from({ length: 6 }, (_, k) => { const a = (Math.PI / 3) * k + Math.PI / 6; return `${c.x + (R - 1) * Math.cos(a)},${c.y + (R - 1) * Math.sin(a)}`; }).join(" ");
-            return <polygon key={i} points={pts} fill={color(load[i] ?? 0, c.d)} opacity={hover === i ? 1 : 0.85} stroke={hover === i ? "var(--foreground)" : "none"} className="cursor-pointer transition-[fill] duration-700" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />;
-          })}
-        </svg>
-        <div className="absolute bottom-4 left-4 min-w-48 rounded-lg border border-border bg-popover p-3 text-xs">
-          {h ? (<><div className="font-semibold">{h.name}</div><div className="mt-1 text-muted-foreground">{(load[hover!] ?? 0).toFixed(1)}% CPU · {Math.round(40 + h.pid % 400)} MB · PID {h.pid}</div></>) : <div className="text-muted-foreground">Passe o mouse sobre um hexágono</div>}
-        </div>
+        <section className="glass p-4">
+          <h2 className="font-semibold">Armazenamento local</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {snapshot.disks.map((disk) => {
+              const used = disk.sizeBytes > 0 ? ((disk.sizeBytes - disk.freeBytes) / disk.sizeBytes) * 100 : 0;
+              return <div key={disk.name} className="rounded-lg border border-border p-3">
+                <div className="flex justify-between text-sm"><strong>{disk.name}</strong><span>{Math.round(used)}% usado</span></div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${used}%` }} /></div>
+                <div className="mt-2 text-xs text-muted-foreground">{bytes(disk.sizeBytes - disk.freeBytes)} usados · {bytes(disk.freeBytes)} livres de {bytes(disk.sizeBytes)}</div>
+              </div>;
+            })}
+          </div>
+        </section>
+        <section className="glass p-4">
+          <h2 className="font-semibold">Placas de vídeo</h2>
+          <div className="mt-3 space-y-2">{snapshot.gpu.map((gpu) => <div key={gpu.name} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border p-3 text-sm"><span>{gpu.name}</span><span className="text-muted-foreground">Driver {gpu.driverVersion || "N/D"} · VRAM reportada {gpu.adapterRamBytes ? bytes(gpu.adapterRamBytes) : "N/D"}</span></div>)}</div>
+          <p className="mt-2 text-xs text-muted-foreground">Uso e temperatura da GPU dependem de interfaces específicas do fabricante e ainda não são reportados por esta coleta CIM.</p>
+        </section>
+      </>}
+      <section className="glass overflow-hidden">
+        <div className="border-b border-border p-4"><h2 className="font-semibold">Processos ativos</h2><p className="text-xs text-muted-foreground">Lista real do Windows · até 40 processos com maior tempo acumulado de CPU.</p></div>
+        {processes.length ? <div className="max-h-[440px] overflow-auto"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-card text-muted-foreground"><tr><th className="p-3">Processo</th><th className="p-3">PID</th><th className="p-3">CPU acumulada</th><th className="p-3">Memória</th><th className="p-3">Estado</th></tr></thead><tbody>{processes.map((p) => <tr key={p.pid} className="border-t border-border"><td className="p-3 font-medium">{p.name}.exe</td><td className="p-3">{p.pid}</td><td className="p-3">{p.cpuSeconds == null ? "N/D" : `${p.cpuSeconds}s`}</td><td className="p-3">{bytes(p.memoryBytes)}</td><td className="p-3">{p.responding ? "Respondendo" : "Sem resposta"}</td></tr>)}</tbody></table></div> : <p className="p-4 text-sm text-muted-foreground">Aguardando lista de processos do Windows.</p>}
       </section>
-      <div className="flex flex-col gap-4">
-        <section className="glass p-4">
-          <div className="text-sm font-semibold">Uso de CPU</div><div className="text-xs text-muted-foreground">Em tempo real · 8 núcleos</div>
-          <div className="mt-2 font-display text-3xl font-bold">{Math.round(cpu[cpu.length - 1] ?? 0)} %</div>
-          <LineChart data={cpu} height={110} />
-        </section>
-        <section className="glass space-y-3 p-4 text-sm">
-          <div className="flex justify-between font-semibold">Sistema <span className="text-xs font-normal text-muted-foreground">54h 57m</span></div>
-          {[["Processador", "Ryzen 7 7800X3D"], ["Memória", "11 / 16 GB"], ["Disco C:", "50 GB livres"], ["Serviços", "57 a correr · 12 no arranque"]].map(([k, v]) => <div key={k} className="flex justify-between text-xs"><span className="text-muted-foreground">{k}</span><span>{v}</span></div>)}
-        </section>
-        <section className="glass p-4">
-          <div className="text-sm font-semibold">Memória em uso</div>
-          <div className="mt-1 font-display text-3xl font-bold">{ram} % <span className="text-xs font-normal text-muted-foreground">de 16 GB instalados</span></div>
-          <div className="mt-3 flex gap-[3px]">{Array.from({ length: 36 }, (_, i) => <div key={i} className={`h-5 flex-1 rounded-sm ${i / 36 < ram / 100 ? "bg-accent" : "bg-muted"}`} />)}</div>
-          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground"><span>0%</span><span>100%</span></div>
-        </section>
-      </div>
     </div>
   );
+}
+
+function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return <section className="glass min-w-0 p-4"><div className="text-xs text-muted-foreground">{title}</div><div className="mt-1 font-display text-3xl font-bold">{value}</div><div className="mt-2 truncate text-xs text-muted-foreground" title={detail}>{detail}</div></section>;
 }
