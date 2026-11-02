@@ -57,7 +57,7 @@ export interface AnonymosHistoryEntry {
   target: string;
   details: Record<string, unknown>;
 }
-export interface AnonymosDetectedGame { id: "fivem" | "gtav" | "fortnite" | "cs2" | "valorant"; name: string; path: string; }
+export interface AnonymosDetectedGame { id: "fivem" | "gtav" | "fortnite" | "cs2" | "valorant" | "minecraft"; name: string; path: string; }
 export interface AnonymosStartupEntry {
   id: string;
   name: string;
