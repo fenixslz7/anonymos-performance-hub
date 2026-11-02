@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, Gamepad2, RotateCcw, SlidersHorizontal, Sparkles } from "lucide-react";
 import hero from "@/assets/hero-anonymos.jpg";
 
@@ -32,7 +32,50 @@ const games = [
 
 function Graphics() {
   const [profiles, setProfiles] = useState<Record<string, { values: VisualProfile; preset: string }>>({});
+  const [profilesLoaded, setProfilesLoaded] = useState(false);
   const [selectedGame, setSelectedGame] = useState("FiveM");
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("anonymos-visual-profiles-v1");
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const valid: Record<string, { values: VisualProfile; preset: string }> = {};
+          for (const [game, entry] of Object.entries(parsed)) {
+            if (!entry || typeof entry !== "object") continue;
+            const candidate = entry as { values?: Partial<VisualProfile>; preset?: unknown };
+            const values = candidate.values;
+            if (!values || !["sat", "con", "bri", "gamma", "vib"].every((key) => typeof values[key as keyof VisualProfile] === "number" && Number.isFinite(values[key as keyof VisualProfile]))) continue;
+            valid[game] = {
+              values: {
+                sat: values.sat as number,
+                con: values.con as number,
+                bri: values.bri as number,
+                gamma: values.gamma as number,
+                vib: values.vib as number,
+              },
+              preset: typeof candidate.preset === "string" ? candidate.preset : "Personalizado",
+            };
+          }
+          setProfiles(valid);
+        }
+      }
+    } catch {
+      // Um perfil local inválido não impede o painel de funcionar.
+    } finally {
+      setProfilesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!profilesLoaded) return;
+    try {
+      window.localStorage.setItem("anonymos-visual-profiles-v1", JSON.stringify(profiles));
+    } catch {
+      // Se o armazenamento local estiver indisponível, os controles continuam funcionando na sessão.
+    }
+  }, [profiles, profilesLoaded]);
   const currentProfile = profiles[selectedGame] ?? { values: presets["Padrão"]!, preset: "Padrão" };
   const values = currentProfile.values;
   const activePreset = currentProfile.preset;
@@ -52,7 +95,7 @@ function Graphics() {
         <div className="relative">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-extrabold tracking-[.2em] text-primary"><Sparkles className="h-3 w-3" /> VISUAL TUNING STUDIO</div>
           <h1 className="font-display text-3xl font-black md:text-4xl">Gráficos & <span className="text-primary">Vibrance.</span></h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Monte um perfil visual por jogo, teste presets e veja a alteração na imagem de prévia antes de decidir seu estilo.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Monte um perfil visual por jogo, teste presets e veja a alteração na imagem de prévia antes de decidir seu estilo. Os ajustes ficam salvos neste computador.</p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-warning/30 bg-warning/5 px-3 py-1.5 text-[10px] text-warning"><Eye className="h-3.5 w-3.5" /> Prévia local · Não altera monitor, driver ou configurações globais do Windows.</div>
         </div>
       </section>
