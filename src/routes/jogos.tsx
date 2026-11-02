@@ -10,10 +10,11 @@ export const Route = createFileRoute("/jogos")({
 
 const suggestions = [
   { id: "fivem", name: "FiveM", mark: "F", category: "ROLEPLAY", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fivem.svg", accent: "from-rose-500/20 via-background to-background" },
-  { id: "gtav", name: "GTA V", mark: "V", category: "OPEN WORLD", accent: "from-emerald-500/20 via-background to-background" },
+  { id: "gtav", name: "GTA V", mark: "V", category: "OPEN WORLD", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/rockstargames.svg", accent: "from-emerald-500/20 via-background to-background" },
   { id: "fortnite", name: "Fortnite", mark: "FN", category: "BATTLE ROYALE", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg", accent: "from-cyan-400/20 via-background to-background" },
   { id: "cs2", name: "Counter-Strike 2", mark: "CS2", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg", accent: "from-amber-400/20 via-background to-background" },
-  { id: "valorant", name: "Valorant", mark: "V", category: "TACTICAL FPS", accent: "from-red-500/20 via-background to-background" },
+  { id: "valorant", name: "Valorant", mark: "V", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/valorant.svg", accent: "from-red-500/20 via-background to-background" },
+  { id: "minecraft", name: "Minecraft", mark: "MC", category: "SANDBOX / SURVIVAL", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/minecraft.svg", accent: "from-emerald-600/20 via-background to-background" },
 ];
 
 function Games() {
@@ -145,7 +146,7 @@ function Games() {
 
       <section className="glass p-5">
         <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div><button type="button" onClick={() => void detectGames()} disabled={detecting || !desktopAvailable} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${detecting ? "animate-spin" : ""}`} /> {detecting ? "Procurando…" : "Detectar instalações"}</button></div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6">
           {suggestions.map((game) => (
             <button key={game.name} type="button" onClick={() => { setSelected(game.name); setStatus(""); }} aria-pressed={selected === game.name}
               className={`group relative min-h-48 overflow-hidden rounded-xl border bg-gradient-to-br p-4 text-left transition duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-glow ${game.accent} ${selected === game.name ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
@@ -160,9 +161,9 @@ function Games() {
           ))}
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          {installedGames.some((item) => item.name === selected) && <button onClick={() => void launchDetected()} disabled={busy} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Gamepad2 className="h-4 w-4" />{busy ? "Iniciando…" : `Abrir ${selected}`}</button>}
+          {installedGames.some((item) => item.name === selected) && <button onClick={() => void launchDetected()} disabled={busy} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Gamepad2 className="h-4 w-4" />{busy ? "Iniciando…" : selected === "Minecraft" ? "Abrir Minecraft Launcher" : `Abrir ${selected}`}</button>}
           <button onClick={() => void launch()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/50 disabled:opacity-50"><FolderOpen className="h-4 w-4" />{busy ? "Aguardando…" : `Localizar ${selected} (.exe)`}</button>
-          <span className="text-xs text-muted-foreground">{detectMessage || "Busca local em diretórios conhecidos da Steam, Epic, Riot e FiveM."}</span>
+          <span className="text-xs text-muted-foreground">{detectMessage || "Busca local em diretórios conhecidos da Steam, Epic, Riot, FiveM e Minecraft Launcher. O ícone Minecraft identifica a edição/launcher selecionado; a abertura depende de um launcher .exe detectado ou escolhido manualmente."}</span>
         </div>
         {status && <div role="status" className="mt-4 break-all rounded-lg border border-border p-3 text-sm">{status}</div>}
       </section>
