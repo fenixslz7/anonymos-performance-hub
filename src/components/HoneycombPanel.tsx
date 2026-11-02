@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Cpu, HardDrive, MemoryStick, Monitor, Wifi, type LucideIcon } from "lucide-react";
 
 export type HoneycombMetric = {
@@ -53,6 +54,7 @@ export function HoneycombPanel({ metrics }: { metrics: HoneycombMetric[] }) {
               <h3 className="mt-1 font-display text-2xl font-extrabold">{active.label}</h3>
               <div className="mt-2 font-display text-3xl font-bold tabular-nums">{active.value}</div>
               <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground">{active.detail}</p>
+              {active.id === "net" && <Link to="/internet" className="mt-4 inline-flex items-center rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition hover:brightness-110">Abrir diagnóstico de Internet</Link>}
               <div className="mt-5 flex items-center gap-2 text-[10px] text-muted-foreground"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" /> Valores preenchidos apenas quando há leitura disponível.</div>
             </div>;
           })()}
