@@ -74,6 +74,9 @@ export interface FileRoutesByTo {
   '/graficos': typeof GraficosRoute
   '/jogos': typeof JogosRoute
   '/monitor': typeof MonitorRoute
+  '/internet': typeof InternetRoute
+  '/limpeza': typeof LimpezaRoute
+  '/inicializacao': typeof InicializacaoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesById {
@@ -82,6 +85,9 @@ export interface FileRoutesById {
   '/graficos': typeof GraficosRoute
   '/jogos': typeof JogosRoute
   '/monitor': typeof MonitorRoute
+  '/internet': typeof InternetRoute
+  '/limpeza': typeof LimpezaRoute
+  '/inicializacao': typeof InicializacaoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRouteTypes {
