@@ -23,7 +23,7 @@ const presets: Record<string, V> = {
 };
 
 function Graphics() {
-  const [v, setV] = useState<V>(presets.Padrão);
+  const [v, setV] = useState<V>(presets.Padrão!);
   const [active, setActive] = useState("Padrão");
   const rows: [keyof V, string, number][] = [["sat", "Saturação", 200], ["con", "Contraste", 200], ["bri", "Brilho", 200], ["gamma", "Gama", 200], ["vib", "Vibrance digital", 100]];
   return (
@@ -32,7 +32,7 @@ function Graphics() {
         <h1 className="font-display text-lg font-bold">Ajustes Gráficos</h1>
         <div className="grid grid-cols-2 gap-2">
           {Object.keys(presets).map((p) => (
-            <button key={p} onClick={() => { setV(presets[p]); setActive(p); }} className={`rounded-lg border px-3 py-2 text-sm transition ${active === p ? "border-primary bg-primary/15" : "border-border hover:bg-secondary"}`}>{p}</button>
+            <button key={p} onClick={() => { setV(presets[p]!); setActive(p); }} className={`rounded-lg border px-3 py-2 text-sm transition ${active === p ? "border-primary bg-primary/15" : "border-border hover:bg-secondary"}`}>{p}</button>
           ))}
         </div>
         {rows.map(([k, label, max]) => (

@@ -25,7 +25,7 @@ function Games() {
   const [sel, setSel] = useState(0);
   const [state, setState] = useState<"idle" | "boost" | "ok">("idle");
   const [level, setLevel] = useState(40);
-  const g = games[sel];
+  const g = games[sel]!;
   const launch = () => { setState("boost"); setTimeout(() => setState("ok"), 1800); };
   return (
     <div className="space-y-5">
