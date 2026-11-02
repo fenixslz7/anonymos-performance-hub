@@ -16,6 +16,7 @@ import { Route as MonitorRouteImport } from './routes/monitor'
 import { Route as InternetRouteImport } from './routes/internet'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
 import { Route as InicializacaoRouteImport } from './routes/inicializacao'
+import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as OtimizacaoRouteImport } from './routes/otimizacao'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const InicializacaoRoute = InicializacaoRouteImport.update({
   path: '/inicializacao',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoricoRoute = HistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OtimizacaoRoute = OtimizacaoRouteImport.update({
   id: '/otimizacao',
   path: '/otimizacao',
@@ -67,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/internet': typeof InternetRoute
   '/limpeza': typeof LimpezaRoute
   '/inicializacao': typeof InicializacaoRoute
+  '/historico': typeof HistoricoRoute
+  '/historico': typeof HistoricoRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesByTo {
@@ -92,10 +100,10 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/otimizacao'
+  fullPaths: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/otimizacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/otimizacao'
-  id: '__root__' | '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/otimizacao'
+  to: '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/otimizacao'
+  id: '__root__' | '/' | '/graficos' | '/jogos' | '/monitor' | '/internet' | '/limpeza' | '/inicializacao' | '/historico' | '/otimizacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +114,7 @@ export interface RootRouteChildren {
   InternetRoute: typeof InternetRoute
   LimpezaRoute: typeof LimpezaRoute
   InicializacaoRoute: typeof InicializacaoRoute
+  HistoricoRoute: typeof HistoricoRoute
   OtimizacaoRoute: typeof OtimizacaoRoute
 }
 
@@ -160,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InicializacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/historico': {
+      id: '/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/otimizacao': {
       id: '/otimizacao'
       path: '/otimizacao'
@@ -178,6 +194,7 @@ const rootRouteChildren: RootRouteChildren = {
   InternetRoute: InternetRoute,
   LimpezaRoute: LimpezaRoute,
   InicializacaoRoute: InicializacaoRoute,
+  HistoricoRoute: HistoricoRoute,
   OtimizacaoRoute: OtimizacaoRoute,
 }
 export const routeTree = rootRouteImport
