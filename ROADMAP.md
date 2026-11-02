@@ -9,15 +9,19 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 
 ## Estado atual auditado
 - A interface usa React 19, TanStack Start/Router, Vite e Tailwind; o desktop usa Electron com preload e IPC limitado.
-- Rotas atuais: Dashboard, Monitor, Otimização, Gráficos, Jogos, Internet e Limpeza.
+- Rotas atuais: Dashboard, Monitor, Otimização, Gráficos, Jogos, Internet, Limpeza, Inicialização e Histórico.
 - Dashboard e Monitor consultam leituras nativas de CPU, RAM, GPU identificada/VRAM reportada, discos, Windows e processos; gráficos de histórico usam amostras coletadas, não séries aleatórias.
-- Uso/temperatura de GPU ainda não estão disponíveis pela coleta atual; CPU por processo também não é apresentada como percentual instantâneo.
+- Uso, temperatura e VRAM dedicada são consultados via NVIDIA SMI quando o driver NVIDIA disponibiliza o utilitário; em AMD/Intel ou sem esse utilitário, os campos permanecem N/D. CPU por processo é tempo acumulado, não percentual instantâneo.
 - Otimização aplica de verdade somente os planos de energia Equilibrado/Alto desempenho via powercfg, após confirmação. Outros ramos são informativos e não fingem alterar o Windows.
 - Gráficos mantém perfis visuais independentes por jogo nesta sessão e aplica os sliders apenas à imagem de prévia; não altera o driver, monitor ou jogo.
-- Game Center oferece cartões visuais de FiveM, GTA V, Fortnite, Counter-Strike 2 e Valorant e permite localizar manualmente um executável; ainda não detecta bibliotecas de jogos automaticamente nem aplica boost.
+- Game Center oferece cartões visuais de FiveM, GTA V, Fortnite, Counter-Strike 2 e Valorant, procura executáveis em diretórios comuns Steam/Epic/Riot/FiveM e permite seleção manual. O Modo de Jogo troca temporariamente para um plano de alto desempenho, salva o plano original e o restaura ao fechar o app ou manualmente; não altera FPS, serviços ou prioridade de processo.
 - Assistente local consulta snapshot real de CPU/RAM/GPU/discos quando disponível e responde por regras locais; não é um modelo de IA conectado nem executa alterações.
+- Perfis Gráficos por jogo são persistidos no armazenamento local do navegador; sliders alteram a prévia, não o driver nem o jogo.
 - Internet mede latência/perda de pacotes, adaptadores, DNS e velocidade por transferência real. Não garante redução de ping.
 - Limpeza Inteligente analisa e remove apenas arquivos temporários permitidos com mais de 24 horas, mediante seleção/confirmação; validação final no computador do usuário continua pendente.
+- Inicialização lista entradas de HKCU Run e da pasta Inicializar do usuário; desativação guarda backup local e oferece restauração. Não altera entradas de outros usuários, serviços ou tarefas agendadas.
+- Gerenciador de processos agora pode encerrar processos selecionados após confirmação, com bloqueio de processos críticos e conferência de PID/nome/hora de início.
+- Histórico local registra operações de limpeza, inicialização, encerramento de processo, inicialização de jogos, planos de energia e Modo de Jogo.
 
 ## Arquitetura-alvo
 - **Interface:** manter React/TypeScript e o design ANONYMOS (preto/grafite, roxo e azul elétrico), animações suaves, estados acessíveis e layout responsivo.
@@ -118,13 +122,17 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - [x] Primeira camada visual de jogos: cartões individuais com símbolos FiveM, Fortnite e Counter-Strike 2 e seleção de jogo.
 - [x] Colmeia hexagonal interativa no dashboard ligada aos valores reais de CPU, RAM, GPU e discos; rede direciona ao diagnóstico dedicado.
 - [x] Ícone de Internet interativo na navegação, com animação de foco/seleção; a animação não representa um teste de conectividade.
-- [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold e CI adicionados; build e validação Windows pendentes).
-- [ ] Telemetria real.
-- [ ] Processos e inicialização.
-- [x] Primeira versão da Limpeza Inteligente: varredura e remoção de arquivos temporários com mais de 24 horas nas pastas temporárias do usuário e do Windows, sem apagar pastas ou arquivos pessoais; validação no Windows ainda pendente.
-- [ ] Game Booster.
-- [ ] Rede e otimizações seguras.
-- [ ] Benchmark, diagnóstico e histórico.
-- [ ] Testes em Windows e instalador final.
+- [x] Scaffold desktop Electron, preload isolado, IPC allowlist e pipeline de instalador Windows; a execução automatizada gera instalador como artefato. Teste físico de instalação/uso ainda pendente.
+- [x] Telemetria base CPU/RAM/GPU detectada/armazenamento/OS/processos; sensores NVIDIA SMI opcionais adicionados para uso, temperatura e VRAM.
+- [x] Gerenciador de processos com encerramento confirmado, validação de PID/nome/início e bloqueio de processos críticos.
+- [x] Gerenciador de inicialização do usuário (HKCU Run e pasta Inicializar) com backup local e restauração.
+- [x] Primeira versão da Limpeza Inteligente: temporários com mais de 24 horas nas pastas do usuário e Windows, sem apagar pastas ou arquivos pessoais; validação no PC do usuário pendente.
+- [x] Modo de Jogo temporário por plano de energia, com plano original salvo, restauração manual e tentativa de restauração ao sair/iniciar o app. Não altera prioridade do jogo nem promete FPS.
+- [x] Detecção de jogos em diretórios comuns Steam/Epic/Riot/FiveM e inicialização manual ou detectada; bibliotecas fora dos locais conhecidos ainda podem exigir seleção manual.
+- [x] Rede: ping/perda, DNS/adaptadores e teste de transferência Cloudflare; não garante redução de ping.
+- [x] Perfis gráficos por jogo persistidos localmente, com prévia visual. Aplicação ao driver/monitor/jogo ainda depende de API do fabricante.
+- [x] Histórico local das principais ações.
+- [ ] Benchmark real de FPS dentro dos jogos e telemetria GPU AMD/Intel; dependem de integração específica e validação.
+- [ ] Teste físico de instalação, execução, permissões e reversão em um PC Windows de usuário.
 
 Este documento é o contrato técnico do projeto e deve ser atualizado a cada fase concluída.
