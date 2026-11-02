@@ -99,6 +99,37 @@ function runPowerCfg(args) {
   });
 }
 
+
+function registerCleanupIpc() {
+  const runCleanup = async (requestedCategories, mode) => {
+    if (process.platform !== "win32") throw new Error("Limpeza disponível somente no aplicativo Windows.");
+    if (!Array.isArray(requestedCategories) || requestedCategories.length < 1 || requestedCategories.length > 2) throw new Error("Selecione ao menos uma categoria válida.");
+    const allowed = new Set(["user-temp", "windows-temp"]);
+    const categories = [...new Set(requestedCategories)];
+    if (categories.some((category) => !allowed.has(category))) throw new Error("Categoria de limpeza não permitida.");
+    const encoded = Buffer.from(JSON.stringify(categories), "utf8").toString("base64");
+    const script = [
+      "$ErrorActionPreference = 'SilentlyContinue'",
+      "$requested = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('" + encoded + "')) | ConvertFrom-Json",
+      "$cutoff = (Get-Date).AddHours(-24)",
+      "$roots = @()",
+      "if ($requested -contains 'user-temp') { $candidate = [System.IO.Path]::GetFullPath($env:TEMP); $profile = [System.IO.Path]::GetFullPath($env:USERPROFILE); if ($candidate.StartsWith($profile, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $candidate -PathType Container)) { $roots += [pscustomobject]@{ id='user-temp'; label='Temporários do usuário'; path=$candidate } } }",
+      "if ($requested -contains 'windows-temp') { $candidate = [System.IO.Path]::GetFullPath((Join-Path $env:WINDIR 'Temp')); $windows = [System.IO.Path]::GetFullPath($env:WINDIR); if ($candidate.StartsWith($windows, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $candidate -PathType Container)) { $roots += [pscustomobject]@{ id='windows-temp'; label='Temporários do Windows'; path=$candidate } } }",
+      "$results = @(); $totalFiles = 0; $totalBytes = [int64]0; $deletedFiles = 0; $deletedBytes = [int64]0; $skippedFiles = 0",
+      "foreach ($root in $roots) {",
+      "  $files = @(Get-ChildItem -LiteralPath $root.path -File -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cutoff -and -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) } | Select-Object -First 20000)",
+      "  $rootBytes = [int64]0",
+      "  foreach ($file in $files) { $rootBytes += [int64]$file.Length; if ('" + mode + "' -eq 'delete') { try { Remove-Item -LiteralPath $file.FullName -Force -ErrorAction Stop; $deletedFiles++; $deletedBytes += [int64]$file.Length } catch { $skippedFiles++ } } }",
+      "  $totalFiles += $files.Count; $totalBytes += $rootBytes; $results += [pscustomobject]@{ id=$root.id; label=$root.label; path=$root.path; files=$files.Count; bytes=$rootBytes }",
+      "}",
+      "[pscustomobject]@{ capturedAt=(Get-Date).ToString('o'); ageHours=24; categories=@($results); totalFiles=$totalFiles; totalBytes=$totalBytes; deletedFiles=$deletedFiles; deletedBytes=$deletedBytes; skippedFiles=$skippedFiles } | ConvertTo-Json -Depth 5 -Compress"
+    ].join("\n");
+    return runPowerShell(script);
+  };
+  ipcMain.handle("cleanup:scan", async (_event, categories) => runCleanup(categories, "scan"));
+  ipcMain.handle("cleanup:run", async (_event, categories) => runCleanup(categories, "delete"));
+}
+
 function registerPowerIpc() {
   ipcMain.handle("power:get-plan", async () => {
     if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
@@ -308,6 +339,7 @@ app.whenReady().then(async () => {
   registerWindowIpc();
   registerSystemIpc();
   registerGameIpc();
+  registerCleanupIpc();
   registerPowerIpc();
   registerNetworkIpc();
   try {
