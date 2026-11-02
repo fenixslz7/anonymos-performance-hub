@@ -30,3 +30,34 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Windows desktop (Electron)
+
+A fundação inicial do Electron está em desenvolvimento. O painel web atual usa TanStack Start com SSR; por isso, a versão desktop executa um servidor Node local empacotado e abre a interface em uma janela Electron isolada.
+
+### Pré-requisitos
+
+- Windows 10/11 x64 para gerar e validar o instalador.
+- Node.js compatível com as versões de Vite/TanStack do projeto e npm.
+
+### Desenvolvimento desktop
+
+```sh
+npm install
+npm run dev:desktop
+```
+
+### Gerar instalador NSIS x64
+
+```sh
+npm install
+npm run build:desktop
+```
+
+O instalador será gerado na pasta `release/`. A geração e o funcionamento do instalador ainda precisam ser validados em Windows antes de qualquer release ser considerada pronta.
+
+### Segurança do desktop
+
+O renderer não recebe acesso direto ao Node.js. O preload expõe somente controles de janela e informações básicas do aplicativo por IPC; operações de sistema devem ser implementadas no processo principal por APIs específicas e allowlist, nunca por comandos arbitrários enviados pela interface.
+
+Consulte [ROADMAP.md](./ROADMAP.md) para o estado real das fases e pendências.
