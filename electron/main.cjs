@@ -494,8 +494,8 @@ const PROTECTED_PROCESS_NAMES = new Set([
 
 function processPriorityBackupFile() { return join(app.getPath("userData"), "process-priority-backups.json"); }
 const BOOSTABLE_GAME_PROCESSES = new Set([
-  "fivem", "fiveM".toLowerCase(), "gta5", "gta5_enhanced", "fortniteclient-win64-shipping",
-  "cs2", "valorant-win64-shipping", "valorant", "r5apex", "overwatch", "overwatch2",
+  "fivem", "gta5", "gta5_enhanced", "fortniteclient-win64-shipping",
+  "cs2", "valorant-win64-shipping", "valorant",
 ]);
 function registerProcessPriorityIpc() {
   ipcMain.handle("system:boost-process-priority", async (_event, request) => {
