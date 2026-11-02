@@ -14,7 +14,7 @@ const suggestions = [
   { id: "fortnite", name: "Fortnite", mark: "FN", category: "BATTLE ROYALE", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg", accent: "from-cyan-400/20 via-background to-background" },
   { id: "cs2", name: "Counter-Strike 2", mark: "CS2", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg", accent: "from-amber-400/20 via-background to-background" },
   { id: "valorant", name: "Valorant", mark: "V", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/valorant.svg", accent: "from-red-500/20 via-background to-background" },
-  { id: "minecraft", name: "Minecraft", mark: "MC", category: "SANDBOX / SURVIVAL", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/minecraft.svg", accent: "from-emerald-600/20 via-background to-background" },
+  { id: "minecraft", name: "Minecraft", mark: "MC", category: "SANDBOX / SURVIVAL", image: "/game-icons/minecraft.svg", accent: "from-emerald-600/20 via-background to-background" },
 ];
 
 function Games() {
@@ -152,8 +152,8 @@ function Games() {
               className={`group relative min-h-48 overflow-hidden rounded-xl border bg-gradient-to-br p-4 text-left transition duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-glow ${game.accent} ${selected === game.name ? "border-primary ring-1 ring-primary/40" : "border-border"}`}>
               <div className="absolute right-3 top-3 rounded-full border border-border bg-background/70 px-2 py-1 text-[9px] font-bold tracking-wider text-muted-foreground">{game.category}</div>
               <div className="relative flex h-28 items-center justify-center">
-                <span className="font-display text-5xl font-black tracking-tighter text-foreground/80 drop-shadow-lg">{game.mark}</span>
-                {game.image && <img src={game.image} alt={`Símbolo de ${game.name}`} loading="lazy" className="absolute h-20 w-20 object-contain brightness-0 invert drop-shadow-[0_0_14px_rgba(255,255,255,0.22)] transition duration-300 group-hover:scale-110" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+                {!game.image && <span className="font-display text-5xl font-black tracking-tighter text-foreground/80 drop-shadow-lg">{game.mark}</span>}
+                {game.image && <img src={game.image} alt={`Ícone de ${game.name}`} loading="lazy" className={`absolute h-20 w-20 object-contain drop-shadow-[0_0_14px_rgba(255,255,255,0.22)] transition duration-300 group-hover:scale-110 ${game.id === "minecraft" ? "rounded-md" : "brightness-0 invert"}`} onError={(event) => { event.currentTarget.style.display = "none"; }} />}}
               </div>
               <div className="mt-2 flex items-center justify-between gap-2"><div className="font-display text-sm font-bold">{game.name}</div>{selected === game.name && <Sparkles className="h-4 w-4 shrink-0 text-primary" />}</div>
               <div className="mt-1 text-[10px] text-muted-foreground">{selected === game.name ? "Selecionado para iniciar" : "Clique para selecionar este jogo"}</div><div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold tracking-wider">{installedGames.some((entry) => entry.id === game.id) ? <><span className="h-1.5 w-1.5 rounded-full bg-success" /><span className="text-success">INSTALADO</span></> : <><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /><span className="text-muted-foreground">NÃO DETECTADO</span></>}</div>
