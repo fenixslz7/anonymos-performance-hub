@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn } = require("node:child_process");
 const { appendFile, mkdir } = require("node:fs/promises");
 const { join } = require("node:path");
@@ -62,6 +62,25 @@ function registerSystemIpc() {
     `;
     const result = await runPowerShell(script);
     return Array.isArray(result) ? result : result ? [result] : [];
+  });
+}
+
+
+function registerGameIpc() {
+  ipcMain.handle("games:pick-and-launch", async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) return { launched: false, reason: "Janela indisponível." };
+    const choice = await dialog.showOpenDialog(win, {
+      title: "Selecione o executável do jogo",
+      properties: ["openFile"],
+      filters: [{ name: "Aplicativos Windows", extensions: ["exe"] }],
+    });
+    if (choice.canceled || !choice.filePaths[0]) return { launched: false, reason: "Seleção cancelada." };
+    const executable = choice.filePaths[0];
+    const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false });
+    child.once("error", () => {});
+    child.unref();
+    return { launched: true, executable };
   });
 }
 
@@ -187,6 +206,7 @@ function createMainWindow(url) {
 app.whenReady().then(async () => {
   registerWindowIpc();
   registerSystemIpc();
+  registerGameIpc();
   try {
     if (!isDev) await startBundledServer();
     createMainWindow(isDev ? DEV_URL : LOCAL_URL);
