@@ -25,6 +25,7 @@ declare global {
       close: () => Promise<boolean>;
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
+      pickAndLaunchGame: () => Promise<{ launched: boolean; executable?: string; reason?: string }>;
     };
   }
 }
