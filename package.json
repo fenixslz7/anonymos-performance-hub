@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "dev:desktop": "concurrently -k \"vite dev --host 127.0.0.1 --port 5173 --strictPort\" \"wait-on http://127.0.0.1:5173 && cross-env ANONYMOS_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
     "build:desktop": "vite build && electron-builder --win nsis --publish never",
-    "check:desktop": "node --check electron/main.cjs && node --check electron/preload.cjs"
+    "check:desktop": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/benchmark-worker.cjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
