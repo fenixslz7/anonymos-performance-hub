@@ -23,7 +23,7 @@ function Monitor() {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const x = c * R * 1.75 + (r % 2) * R * 0.875 + R, y = r * R * 1.5 + R;
       const d = Math.hypot(c - COLS / 2, (r - ROWS / 2) * 1.15);
-      if (d < 15) out.push({ x, y, d, name: names[(r * 7 + c) % names.length], pid: 1000 + r * 97 + c * 13 });
+      if (d < 15) out.push({ x, y, d, name: names[(r * 7 + c) % names.length]!, pid: 1000 + r * 97 + c * 13 });
     }
     return out;
   }, []);
@@ -48,11 +48,11 @@ function Monitor() {
         <svg viewBox={`0 0 ${COLS * R * 1.75 + R * 2} ${ROWS * R * 1.5 + R}`} className="mx-auto mt-4 w-full max-w-2xl">
           {cells.map((c, i) => {
             const pts = Array.from({ length: 6 }, (_, k) => { const a = (Math.PI / 3) * k + Math.PI / 6; return `${c.x + (R - 1) * Math.cos(a)},${c.y + (R - 1) * Math.sin(a)}`; }).join(" ");
-            return <polygon key={i} points={pts} fill={color(load[i], c.d)} opacity={hover === i ? 1 : 0.85} stroke={hover === i ? "var(--foreground)" : "none"} className="cursor-pointer transition-[fill] duration-700" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />;
+            return <polygon key={i} points={pts} fill={color(load[i] ?? 0, c.d)} opacity={hover === i ? 1 : 0.85} stroke={hover === i ? "var(--foreground)" : "none"} className="cursor-pointer transition-[fill] duration-700" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />;
           })}
         </svg>
         <div className="absolute bottom-4 left-4 min-w-48 rounded-lg border border-border bg-popover p-3 text-xs">
-          {h ? (<><div className="font-semibold">{h.name}</div><div className="mt-1 text-muted-foreground">{load[hover!].toFixed(1)}% CPU · {Math.round(40 + h.pid % 400)} MB · PID {h.pid}</div></>) : <div className="text-muted-foreground">Passe o mouse sobre um hexágono</div>}
+          {h ? (<><div className="font-semibold">{h.name}</div><div className="mt-1 text-muted-foreground">{(load[hover!] ?? 0).toFixed(1)}% CPU · {Math.round(40 + h.pid % 400)} MB · PID {h.pid}</div></>) : <div className="text-muted-foreground">Passe o mouse sobre um hexágono</div>}
         </div>
       </section>
       <div className="flex flex-col gap-4">
