@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { LineChart, useSeries } from "@/lib/live";
+import { LineChart, useSeries } from "@/lib/live-charts";
 
 export const Route = createFileRoute("/monitor")({
   head: () => ({

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, Clock, Loader2, Check, MoreHorizontal } from "lucide-react";
 import hero from "@/assets/hero-anonymos.jpg";
-import { LineChart, useSeries } from "@/lib/live";
+import { LineChart, useSeries } from "@/lib/live-charts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
