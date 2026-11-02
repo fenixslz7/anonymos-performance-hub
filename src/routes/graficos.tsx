@@ -26,8 +26,9 @@ const games = [
   { name: "FiveM", short: "F", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fivem.svg" },
   { name: "Fortnite", short: "FN", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg" },
   { name: "Counter-Strike 2", short: "CS2", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg" },
-  { name: "Valorant", short: "V" },
-  { name: "GTA V", short: "V" },
+  { name: "Valorant", short: "V", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/valorant.svg" },
+  { name: "Minecraft", short: "MC", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/minecraft.svg" },
+  { name: "GTA V", short: "V", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/rockstargames.svg" },
 ];
 
 function Graphics() {
