@@ -42,6 +42,7 @@ export interface AnonymosProcessInfo {
   memoryBytes: number;
   responding: boolean;
   startTime: string | null;
+  priorityBoosted: boolean;
 }
 export interface AnonymosBenchmarkResult {
   capturedAt: string;
@@ -79,6 +80,8 @@ declare global {
       getSystemSnapshot: () => Promise<AnonymosSystemSnapshot>;
       getProcesses: () => Promise<AnonymosProcessInfo[]>;
       terminateProcess: (request: { pid: number; name: string; startTime: string }) => Promise<{ success: boolean; pid: number; name: string }>;
+      boostProcessPriority: (request: { pid: number; name: string; startTime: string }) => Promise<{ success: boolean; alreadyBoosted: boolean; originalPriority: string }>;
+      restoreProcessPriority: (request: { pid: number; name: string; startTime: string }) => Promise<{ success: boolean; restored: string | null; processMissing: boolean; staleProcess: boolean }>;
       listStartupItems: () => Promise<AnonymosStartupList>;
       disableStartupItem: (id: string) => Promise<{ success: boolean; id: string; name: string }>;
       restoreStartupItem: (id: string) => Promise<{ success: boolean; id: string; name: string }>;
