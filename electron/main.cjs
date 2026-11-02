@@ -61,7 +61,7 @@ function registerSystemIpc() {
           if (nvidiaOutput.trim()) break;
         } catch { /* Tenta o próximo caminho conhecido do utilitário NVIDIA. */ }
       }
-      const rows = nvidiaOutput.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean);
+      const rows = nvidiaOutput.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
       for (const line of rows) {
         const columns = line.split(",").map((value) => value.trim());
         if (columns.length < 6) continue;
