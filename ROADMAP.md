@@ -110,8 +110,10 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - `vite.config.ts` direciona Nitro para `node-server` para permitir hospedar SSR localmente no desktop.
 - `package.json` recebeu scripts de desenvolvimento desktop e empacotamento NSIS x64.
 - **Ainda não concluído:** dependências/lockfile precisam ser instalados e sincronizados; build, inicialização do servidor empacotado e instalador precisam ser testados em Windows. Não declarar a fase pronta antes desses testes.
+- Os controles minimizar/maximizar/fechar da janela agora usam a API segura do preload no desktop; ficam ocultos no preview web.
+- Foi adicionado pipeline Windows para instalar dependências, executar testes e gerar o instalador como artefato do GitHub Actions. A execução real do pipeline ainda precisa ser observada após o push.
 - [x] Auditoria inicial das rotas e componentes atuais.
-- [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold adicionado; build e validação Windows pendentes).
+- [ ] Fundação desktop Electron e pipeline de empacotamento (scaffold e CI adicionados; build e validação Windows pendentes).
 - [ ] Telemetria real.
 - [ ] Processos e inicialização.
 - [ ] Limpeza inteligente.
