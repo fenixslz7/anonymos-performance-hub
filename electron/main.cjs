@@ -84,6 +84,42 @@ function registerGameIpc() {
   });
 }
 
+
+const POWER_PLANS = Object.freeze({
+  balanced: "381b4222-f694-41f0-9685-ff5bb260df2e",
+  high: "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c",
+});
+
+function runPowerCfg(args) {
+  return new Promise((resolve, reject) => {
+    execFile("powercfg.exe", args, { windowsHide: true, timeout: 10000 }, (error, stdout, stderr) => {
+      if (error) return reject(new Error((stderr || error.message).trim()));
+      resolve(stdout);
+    });
+  });
+}
+
+function registerPowerIpc() {
+  ipcMain.handle("power:get-plan", async () => {
+    if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
+    const output = await runPowerCfg(["/getactivescheme"]);
+    const match = output.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
+    const activeId = match?.[0]?.toLowerCase() ?? null;
+    return {
+      activeId,
+      activeName: activeId === POWER_PLANS.balanced ? "Equilibrado" : activeId === POWER_PLANS.high ? "Alto desempenho" : "Plano personalizado",
+      options: [{ id: "balanced", label: "Equilibrado" }, { id: "high", label: "Alto desempenho" }],
+    };
+  });
+
+  ipcMain.handle("power:set-plan", async (_event, plan) => {
+    if (process.platform !== "win32") throw new Error("Recurso disponível somente no Windows.");
+    if (plan !== "balanced" && plan !== "high") throw new Error("Plano de energia não permitido.");
+    await runPowerCfg(["/setactive", POWER_PLANS[plan]]);
+    return { success: true, plan };
+  });
+}
+
 function registerWindowIpc() {
   ipcMain.handle("desktop:window:minimize", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -207,6 +243,7 @@ app.whenReady().then(async () => {
   registerWindowIpc();
   registerSystemIpc();
   registerGameIpc();
+  registerPowerIpc();
   try {
     if (!isDev) await startBundledServer();
     createMainWindow(isDev ? DEV_URL : LOCAL_URL);
