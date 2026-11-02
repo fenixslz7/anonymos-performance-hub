@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
+import type { AnonymosDetectedGame } from "@/types/anonymos-desktop";
 import { FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/jogos")({
@@ -8,11 +10,11 @@ export const Route = createFileRoute("/jogos")({
 });
 
 const suggestions = [
-  { name: "FiveM", mark: "F", category: "ROLEPLAY", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fivem.svg", accent: "from-rose-500/20 via-background to-background" },
-  { name: "GTA V", mark: "V", category: "OPEN WORLD", accent: "from-emerald-500/20 via-background to-background" },
-  { name: "Fortnite", mark: "FN", category: "BATTLE ROYALE", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg", accent: "from-cyan-400/20 via-background to-background" },
-  { name: "Counter-Strike 2", mark: "CS2", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg", accent: "from-amber-400/20 via-background to-background" },
-  { name: "Valorant", mark: "V", category: "TACTICAL FPS", accent: "from-red-500/20 via-background to-background" },
+  { id: "fivem", name: "FiveM", mark: "F", category: "ROLEPLAY", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fivem.svg", accent: "from-rose-500/20 via-background to-background" },
+  { id: "gtav", name: "GTA V", mark: "V", category: "OPEN WORLD", accent: "from-emerald-500/20 via-background to-background" },
+  { id: "fortnite", name: "Fortnite", mark: "FN", category: "BATTLE ROYALE", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/fortnite.svg", accent: "from-cyan-400/20 via-background to-background" },
+  { id: "cs2", name: "Counter-Strike 2", mark: "CS2", category: "TACTICAL FPS", image: "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/counterstrike.svg", accent: "from-amber-400/20 via-background to-background" },
+  { id: "valorant", name: "Valorant", mark: "V", category: "TACTICAL FPS", accent: "from-red-500/20 via-background to-background" },
 ];
 
 function Games() {
@@ -22,16 +24,43 @@ function Games() {
   const [boostActive, setBoostActive] = useState(false);
   const [boostBusy, setBoostBusy] = useState(false);
   const [boostMessage, setBoostMessage] = useState("");
+  const [installedGames, setInstalledGames] = useState<AnonymosDetectedGame[]>([]);
+  const [detecting, setDetecting] = useState(false);
+  const [detectMessage, setDetectMessage] = useState("");
+
+  const detectGames = async () => {
+    if (!window.anonymosDesktop || detecting) return;
+    setDetecting(true);
+    setDetectMessage("");
+    try {
+      const result = await window.anonymosDesktop.listInstalledGames();
+      setInstalledGames(result.games);
+      setDetectMessage(result.games.length ? result.games.length + " jogo(s) encontrado(s) nos locais conhecidos." : "Nenhum jogo encontrado nos locais conhecidos. Você ainda pode selecionar o .exe manualmente.");
+    } catch (error) {
+      setDetectMessage(error instanceof Error ? error.message : "Não foi possível detectar os jogos.");
+    } finally {
+      setDetecting(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
     const refresh = async () => {
       if (!window.anonymosDesktop) return;
       try {
-        const result = await window.anonymosDesktop.getGameBoostStatus();
-        if (active) setBoostActive(result.active);
+        const [boost, detected] = await Promise.all([
+          window.anonymosDesktop.getGameBoostStatus(),
+          window.anonymosDesktop.listInstalledGames(),
+        ]);
+        if (!active) return;
+        setBoostActive(boost.active);
+        setInstalledGames(detected.games);
+        setDetectMessage(detected.games.length ? detected.games.length + " jogo(s) encontrado(s) nos locais conhecidos." : "Nenhum jogo encontrado nos locais conhecidos. Você ainda pode selecionar o .exe manualmente.");
       } catch (error) {
-        if (active) setBoostMessage(error instanceof Error ? error.message : "Não foi possível consultar o modo de jogo.");
+        if (active) {
+          setBoostMessage(error instanceof Error ? error.message : "Não foi possível consultar o modo de jogo.");
+          setDetectMessage(error instanceof Error ? error.message : "Detecção indisponível.");
+        }
       }
     };
     void refresh();
@@ -47,6 +76,19 @@ function Games() {
       setStatus(result.launched ? `Solicitação de inicialização enviada: ${result.executable}` : result.reason ?? "Não foi possível iniciar o jogo.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Falha ao iniciar o jogo.");
+    } finally { setBusy(false); }
+  };
+
+  const launchDetected = async () => {
+    const game = suggestions.find((item) => item.name === selected);
+    if (!window.anonymosDesktop || !game || busy) return;
+    setBusy(true);
+    setStatus("Iniciando " + game.name + "…");
+    try {
+      const result = await window.anonymosDesktop.launchDetectedGame(game.id as AnonymosDetectedGame["id"]);
+      setStatus("Solicitação de inicialização enviada: " + result.executable);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Não foi possível iniciar o jogo detectado.");
     } finally { setBusy(false); }
   };
 
@@ -102,7 +144,7 @@ function Games() {
       </section>
 
       <section className="glass p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div><button type="button" onClick={() => void detectGames()} disabled={detecting || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${detecting ? "animate-spin" : ""}`} /> {detecting ? "Procurando…" : "Detectar instalações"}</button></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {suggestions.map((game) => (
             <button key={game.name} type="button" onClick={() => { setSelected(game.name); setStatus(""); }} aria-pressed={selected === game.name}
@@ -118,8 +160,9 @@ function Games() {
           ))}
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={() => void launch()} disabled={busy} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><FolderOpen className="h-4 w-4" />{busy ? "Aguardando…" : `Localizar ${selected} (.exe)`}</button>
-          <span className="text-xs text-muted-foreground">O seletor permite escolher o arquivo .exe correspondente ao jogo selecionado.</span>
+          {installedGames.some((item) => item.name === selected) && <button onClick={() => void launchDetected()} disabled={busy} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Gamepad2 className="h-4 w-4" />{busy ? "Iniciando…" : `Abrir ${selected}`}</button>}
+          <button onClick={() => void launch()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/50 disabled:opacity-50"><FolderOpen className="h-4 w-4" />{busy ? "Aguardando…" : `Localizar ${selected} (.exe)`}</button>
+          <span className="text-xs text-muted-foreground">{detectMessage || "Busca local em diretórios conhecidos da Steam, Epic, Riot e FiveM."}</span>
         </div>
         {status && <div role="status" className="mt-4 break-all rounded-lg border border-border p-3 text-sm">{status}</div>}
       </section>
