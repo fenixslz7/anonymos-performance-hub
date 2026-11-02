@@ -17,7 +17,9 @@ export function Assistant({ open, onClose }: { open: boolean; onClose: () => voi
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [msgs, typing]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs, typing]);
 
   const send = () => {
     const q = input.trim();
