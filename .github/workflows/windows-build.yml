@@ -23,6 +23,8 @@ jobs:
         run: bun install
       - name: Check Electron syntax
         run: bun run check:desktop
+      - name: TypeScript verification
+        run: bun run typecheck
       - name: Run test suite
         run: bun run test
       - name: Build Windows installer
