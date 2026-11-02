@@ -533,31 +533,61 @@ function registerGameBoostIpc() {
     if (process.platform !== "win32") throw new Error("Modo de jogo disponível somente no Windows.");
     const existing = await readJsonFile(gameBoostStateFile(), null);
     if (existing && existing.originalScheme) return { success: true, alreadyActive: true };
+
     const output = await runPowerCfg(["/getactivescheme"]);
     const match = output.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
     const originalScheme = match && match[0].toLowerCase();
     if (!originalScheme) throw new Error("Não foi possível identificar o plano de energia atual.");
     if (originalScheme === POWER_PLANS.high) throw new Error("O plano Alto desempenho já está ativo.");
-    let activeScheme = POWER_PLANS.high;
-    let createdScheme = false;
+
+    // Save the recovery point BEFORE asking Windows to change the active scheme.
+    let session = {
+      originalScheme,
+      activeScheme: POWER_PLANS.high,
+      createdScheme: false,
+      startedAt: new Date().toISOString(),
+    };
+    await writeJsonFile(gameBoostStateFile(), session);
+
     try {
-      await runPowerCfg(["/setactive", activeScheme]);
-    } catch {
-      const duplicateOutput = await runPowerCfg(["/duplicatescheme", "SCHEME_MIN"]);
-      const duplicateMatch = duplicateOutput.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
-      if (!duplicateMatch) throw new Error("O Windows não conseguiu criar um perfil temporário de alto desempenho.");
-      activeScheme = duplicateMatch[0].toLowerCase();
-      createdScheme = true;
       try {
-        await runPowerCfg(["/changename", activeScheme, "ANONYMOS Game Mode", "Plano temporário restaurável criado pelo ANONYMOS PERFORMANCE."]);
-        await runPowerCfg(["/setactive", activeScheme]);
-      } catch (error) {
-        await runPowerCfg(["/delete", activeScheme]).catch(() => {});
-        throw error;
+        await runPowerCfg(["/setactive", POWER_PLANS.high]);
+      } catch (highPlanError) {
+        // SCHEME_MAX is the Windows High Performance alias (SCHEME_MIN is Power Saver).
+        const duplicateOutput = await runPowerCfg(["/duplicatescheme", "SCHEME_MAX"]);
+        const duplicateMatch = duplicateOutput.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
+        if (!duplicateMatch) throw highPlanError;
+
+        const temporaryScheme = duplicateMatch[0].toLowerCase();
+        try {
+          await runPowerCfg(["/changename", temporaryScheme, "ANONYMOS Game Mode", "Plano temporário restaurável criado pelo ANONYMOS PERFORMANCE."]);
+          session = { ...session, activeScheme: temporaryScheme, createdScheme: true };
+          // Save the exact temporary GUID before activating it.
+          await writeJsonFile(gameBoostStateFile(), session);
+          await runPowerCfg(["/setactive", temporaryScheme]);
+        } catch (error) {
+          await runPowerCfg(["/setactive", originalScheme]).catch(() => {});
+          await runPowerCfg(["/delete", temporaryScheme]).catch(() => {});
+          await unlink(gameBoostStateFile()).catch(() => {});
+          throw error;
+        }
       }
+    } catch (error) {
+      // Do not leave a stale recovery record if no plan change took effect.
+      const currentOutput = await runPowerCfg(["/getactivescheme"]).catch(() => "");
+      const currentMatch = currentOutput.match(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i);
+      const currentScheme = currentMatch && currentMatch[0].toLowerCase();
+      if (!currentScheme || currentScheme === originalScheme) {
+        await unlink(gameBoostStateFile()).catch(() => {});
+      } else if (currentScheme !== session.activeScheme) {
+        await runPowerCfg(["/setactive", originalScheme]).catch(() => {});
+        if (session.createdScheme) await runPowerCfg(["/delete", session.activeScheme]).catch(() => {});
+        await unlink(gameBoostStateFile()).catch(() => {});
+      }
+      throw error;
     }
-    await writeJsonFile(gameBoostStateFile(), { originalScheme: originalScheme, activeScheme: activeScheme, createdScheme: createdScheme, startedAt: new Date().toISOString() });
-    await recordAction("Modo de Jogo ativado", "Plano de energia", { createdTemporaryPlan: createdScheme });
+
+    await recordAction("Modo de Jogo ativado", "Plano de energia", { createdTemporaryPlan: session.createdScheme });
     return { success: true, alreadyActive: false };
   });
   ipcMain.handle("games:boost-stop", async () => {
