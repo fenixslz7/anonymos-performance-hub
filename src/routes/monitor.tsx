@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { AnonymosProcessInfo, AnonymosSystemSnapshot } from "@/types/anonymos-desktop";
-import { Cpu, HardDrive, MemoryStick, MonitorCog, Wifi } from "lucide-react";
+import { Cpu, HardDrive, MemoryStick, MonitorCog, Wifi, Zap, RotateCcw } from "lucide-react";
 import { HoneycombPanel } from "@/components/HoneycombPanel";
 
 export const Route = createFileRoute("/monitor")({
@@ -24,6 +24,7 @@ function Monitor() {
   const [error, setError] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
   const [terminatingPid, setTerminatingPid] = useState<number | null>(null);
+  const [priorityPid, setPriorityPid] = useState<number | null>(null);
   const [processMessage, setProcessMessage] = useState("");
 
   useEffect(() => {
@@ -49,6 +50,43 @@ function Monitor() {
 
   const memory = snapshot?.memory;
   const protectedNames = new Set(["system", "idle", "registry", "smss", "csrss", "wininit", "services", "lsass", "svchost", "winlogon", "dwm", "fontdrvhost", "secure system", "memory compression", "electron", "node", "anonymos performance"]);
+  const boostableGameNames = new Set(["fivem", "gta5", "gta5_enhanced", "fortniteclient-win64-shipping", "cs2", "valorant-win64-shipping", "valorant"]);
+  const updateProcess = (pid: number, priorityBoosted: boolean) => {
+    setProcesses((current) => current.map((item) => item.pid === pid ? { ...item, priorityBoosted } : item));
+  };
+  const boostGamePriority = async (processInfo: AnonymosProcessInfo) => {
+    if (!window.anonymosDesktop || !processInfo.startTime || !boostableGameNames.has(processInfo.name.toLowerCase()) || priorityPid !== null || terminatingPid !== null) return;
+    if (!window.confirm("Elevar temporariamente a prioridade de " + processInfo.name + ".exe para Acima do normal? O ANONYMOS salvará a prioridade atual para restaurar depois.")) return;
+    setPriorityPid(processInfo.pid);
+    setProcessMessage("");
+    try {
+      const result = await window.anonymosDesktop.boostProcessPriority({ pid: processInfo.pid, name: processInfo.name, startTime: processInfo.startTime });
+      updateProcess(processInfo.pid, true);
+      setProcessMessage(result.alreadyBoosted ? "A prioridade deste jogo já estava elevada pelo ANONYMOS." : processInfo.name + ".exe agora está em Acima do normal; prioridade anterior salva.");
+    } catch (cause) {
+      setProcessMessage(cause instanceof Error ? cause.message : "Não foi possível elevar a prioridade do jogo.");
+    } finally {
+      setPriorityPid(null);
+    }
+  };
+  const restoreGamePriority = async (processInfo: AnonymosProcessInfo) => {
+    if (!window.anonymosDesktop || !processInfo.startTime || priorityPid !== null || terminatingPid !== null) return;
+    if (!window.confirm("Restaurar a prioridade original de " + processInfo.name + ".exe?")) return;
+    setPriorityPid(processInfo.pid);
+    setProcessMessage("");
+    try {
+      const result = await window.anonymosDesktop.restoreProcessPriority({ pid: processInfo.pid, name: processInfo.name, startTime: processInfo.startTime });
+      updateProcess(processInfo.pid, false);
+      setProcessMessage(result.restored
+        ? "Prioridade original restaurada: " + result.restored + "."
+        : result.processMissing ? "O jogo já foi fechado; o backup obsoleto foi limpo."
+        : "O processo mudou de PID/identidade; nenhuma prioridade foi alterada.");
+    } catch (cause) {
+      setProcessMessage(cause instanceof Error ? cause.message : "Não foi possível restaurar a prioridade original.");
+    } finally {
+      setPriorityPid(null);
+    }
+  };
   const terminateProcess = async (processInfo: AnonymosProcessInfo) => {
     if (!window.anonymosDesktop || !processInfo.startTime || protectedNames.has(processInfo.name.toLowerCase()) || terminatingPid !== null) return;
     if (!window.confirm("Encerrar " + processInfo.name + ".exe (PID " + processInfo.pid + ")? O aplicativo será fechado imediatamente e trabalhos não salvos podem ser perdidos.")) return;
@@ -111,7 +149,10 @@ function Monitor() {
       </>}
       <section className="glass overflow-hidden">
         <div className="border-b border-border p-4"><h2 className="font-semibold">Processos ativos</h2><p className="text-xs text-muted-foreground">Lista real do Windows · até 40 processos com maior tempo acumulado de CPU.</p></div>
-        {processes.length ? <div className="max-h-[440px] overflow-auto"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-card text-muted-foreground"><tr><th className="p-3">Processo</th><th className="p-3">PID</th><th className="p-3">CPU acumulada</th><th className="p-3">Memória</th><th className="p-3">Estado</th><th className="p-3">Ação</th></tr></thead><tbody>{processes.map((p) => <tr key={p.pid} className="border-t border-border"><td className="p-3 font-medium">{p.name}.exe</td><td className="p-3">{p.pid}</td><td className="p-3">{p.cpuSeconds == null ? "N/D" : `${p.cpuSeconds}s`}</td><td className="p-3">{bytes(p.memoryBytes)}</td><td className="p-3">{p.responding ? "Respondendo" : "Sem resposta"}</td><td className="p-3"><button type="button" onClick={() => void terminateProcess(p)} disabled={!p.startTime || protectedNames.has(p.name.toLowerCase()) || terminatingPid !== null} title={!p.startTime ? "Windows não forneceu a hora de início; atualize a lista" : protectedNames.has(p.name.toLowerCase()) ? "Processo protegido" : "Encerrar processo"} className="rounded-md border border-destructive/25 px-2 py-1 text-[10px] font-semibold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30">{terminatingPid === p.pid ? "Encerrando…" : "Encerrar"}</button></td></tr>)}</tbody></table></div> : <p className="p-4 text-sm text-muted-foreground">Aguardando lista de processos do Windows.</p>}{processMessage && <p role="status" className="border-t border-border p-3 text-xs text-muted-foreground">{processMessage}</p>}
+        {processes.length ? <div className="max-h-[440px] overflow-auto"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-card text-muted-foreground"><tr><th className="p-3">Processo</th><th className="p-3">PID</th><th className="p-3">CPU acumulada</th><th className="p-3">Memória</th><th className="p-3">Estado</th><th className="p-3">Ação</th></tr></thead><tbody>{processes.map((p) => <tr key={p.pid} className="border-t border-border"><td className="p-3 font-medium">{p.name}.exe</td><td className="p-3">{p.pid}</td><td className="p-3">{p.cpuSeconds == null ? "N/D" : `${p.cpuSeconds}s`}</td><td className="p-3">{bytes(p.memoryBytes)}</td><td className="p-3">{p.responding ? "Respondendo" : "Sem resposta"}</td><td className="p-3"><div className="flex flex-wrap gap-1.5">{boostableGameNames.has(p.name.toLowerCase()) && (p.priorityBoosted
+            ? <button type="button" onClick={() => void restoreGamePriority(p)} disabled={!p.startTime || priorityPid !== null || terminatingPid !== null} title="Restaurar a prioridade original" className="inline-flex items-center gap-1 rounded-md border border-success/25 px-2 py-1 text-[10px] font-semibold text-success transition hover:bg-success/10 disabled:opacity-30">{priorityPid === p.pid ? "Restaurando…" : <><RotateCcw className="h-3 w-3" /> Restaurar</>}</button>
+            : <button type="button" onClick={() => void boostGamePriority(p)} disabled={!p.startTime || priorityPid !== null || terminatingPid !== null} title="Elevar temporariamente para Acima do normal" className="inline-flex items-center gap-1 rounded-md border border-primary/25 px-2 py-1 text-[10px] font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-30">{priorityPid === p.pid ? "Aplicando…" : <><Zap className="h-3 w-3" /> Prioridade+</>}</button>)}
+            <button type="button" onClick={() => void terminateProcess(p)} disabled={!p.startTime || protectedNames.has(p.name.toLowerCase()) || terminatingPid !== null || priorityPid !== null} title={!p.startTime ? "Windows não forneceu a hora de início; atualize a lista" : protectedNames.has(p.name.toLowerCase()) ? "Processo protegido" : "Encerrar processo"} className="rounded-md border border-destructive/25 px-2 py-1 text-[10px] font-semibold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30">{terminatingPid === p.pid ? "Encerrando…" : "Encerrar"}</button></div></td></tr>)}</tbody></table></div> : <p className="p-4 text-sm text-muted-foreground">Aguardando lista de processos do Windows.</p>}{processMessage && <p role="status" className="border-t border-border p-3 text-xs text-muted-foreground">{processMessage}</p>}
       </section>
     </div>
   );
