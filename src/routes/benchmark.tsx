@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Activity, Cpu, Gauge, HardDrive, MemoryStick, Play, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Cpu, Gauge, MemoryStick, Play, ShieldCheck, Sparkles } from "lucide-react";
 import type { AnonymosBenchmarkResult } from "@/types/anonymos-desktop";
 
 export const Route = createFileRoute("/benchmark")({
