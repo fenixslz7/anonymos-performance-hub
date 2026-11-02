@@ -136,3 +136,16 @@ body { font-family: var(--font-sans); background-image: radial-gradient(ellipse 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+.network-link-icon {
+  transform-origin: center;
+  transition: filter .25s ease, transform .25s ease;
+}
+a:hover .network-link-icon, a[aria-current="page"] .network-link-icon {
+  animation: network-pulse 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 7px color-mix(in oklab, var(--primary) 80%, transparent));
+}
+@keyframes network-pulse {
+  0%, 100% { opacity: .78; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
