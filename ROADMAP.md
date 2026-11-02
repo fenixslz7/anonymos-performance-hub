@@ -8,16 +8,16 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 **Diretriz visual obrigatória:** toda área deve ter imagens/ícones próprios, animações suaves e controles realmente interativos. A biblioteca de jogos deve exibir identidade visual individual (incluindo FiveM, Fortnite e Counter-Strike 2); o acesso à Internet deve ter ícone animado e clicável, sem fingir estado de conexão; o dashboard deve incluir a colmeia hexagonal interativa alimentada por telemetria real. Não usar cartões genéricos com apenas o nome do módulo.
 
 ## Estado atual auditado
-- A interface atual usa React 19, TanStack Start/Router, Vite e Tailwind.
-- As rotas existentes são Dashboard, Monitor, Otimização, Gráficos e Jogos.
-- `src/lib/live-charts.tsx` gera séries aleatórias; não é telemetria de hardware.
-- Dashboard apresenta GPU, temperatura, limpeza, liberação de memória e encerramento de processos com valores/resultados simulados.
-- Monitor usa nomes/PIDs/cargas e especificações estáticas ou aleatórias.
-- Árvore de otimização altera apenas estado React; não altera serviços ou configurações do Windows.
-- Ajustes gráficos alteram apenas a prévia da imagem; não aplicam configurações ao driver/tela.
-- Biblioteca de jogos mostra pontuação fixa e simula inicialização com temporizador.
-- Assistente responde por palavras-chave locais; não consulta telemetria real.
-- O repositório ainda não contém uma camada Electron/Windows nativa confirmada.
+- A interface usa React 19, TanStack Start/Router, Vite e Tailwind; o desktop usa Electron com preload e IPC limitado.
+- Rotas atuais: Dashboard, Monitor, Otimização, Gráficos, Jogos, Internet e Limpeza.
+- Dashboard e Monitor consultam leituras nativas de CPU, RAM, GPU identificada/VRAM reportada, discos, Windows e processos; gráficos de histórico usam amostras coletadas, não séries aleatórias.
+- Uso/temperatura de GPU ainda não estão disponíveis pela coleta atual; CPU por processo também não é apresentada como percentual instantâneo.
+- Otimização aplica de verdade somente os planos de energia Equilibrado/Alto desempenho via powercfg, após confirmação. Outros ramos são informativos e não fingem alterar o Windows.
+- Gráficos mantém perfis visuais independentes por jogo nesta sessão e aplica os sliders apenas à imagem de prévia; não altera o driver, monitor ou jogo.
+- Game Center oferece cartões visuais de FiveM, GTA V, Fortnite, Counter-Strike 2 e Valorant e permite localizar manualmente um executável; ainda não detecta bibliotecas de jogos automaticamente nem aplica boost.
+- Assistente local consulta snapshot real de CPU/RAM/GPU/discos quando disponível e responde por regras locais; não é um modelo de IA conectado nem executa alterações.
+- Internet mede latência/perda de pacotes, adaptadores, DNS e velocidade por transferência real. Não garante redução de ping.
+- Limpeza Inteligente analisa e remove apenas arquivos temporários permitidos com mais de 24 horas, mediante seleção/confirmação; validação final no computador do usuário continua pendente.
 
 ## Arquitetura-alvo
 - **Interface:** manter React/TypeScript e o design ANONYMOS (preto/grafite, roxo e azul elétrico), animações suaves, estados acessíveis e layout responsivo.
