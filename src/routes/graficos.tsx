@@ -23,7 +23,7 @@ const presets: Record<string, V> = {
 };
 
 function Graphics() {
-  const [v, setV] = useState<V>(presets.Padrão!);
+  const [v, setV] = useState<V>(presets["Padrão"]!);
   const [active, setActive] = useState("Padrão");
   const rows: [keyof V, string, number][] = [["sat", "Saturação", 200], ["con", "Contraste", 200], ["bri", "Brilho", 200], ["gamma", "Gama", 200], ["vib", "Vibrance digital", 100]];
   return (
