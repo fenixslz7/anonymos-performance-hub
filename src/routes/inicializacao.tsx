@@ -14,6 +14,10 @@ function StartupManager() {
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false);
+  const [autoLaunchAvailable, setAutoLaunchAvailable] = useState(false);
+  const [autoLaunchLoading, setAutoLaunchLoading] = useState(true);
+  const [autoLaunchBusy, setAutoLaunchBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!window.anonymosDesktop) {
@@ -32,7 +36,44 @@ function StartupManager() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+
+  const loadAutoLaunch = useCallback(async () => {
+    if (!window.anonymosDesktop) {
+      setAutoLaunchAvailable(false);
+      setAutoLaunchLoading(false);
+      return;
+    }
+    setAutoLaunchLoading(true);
+    try {
+      const result = await window.anonymosDesktop.getAutoLaunchSettings();
+      setAutoLaunchAvailable(result.available);
+      setAutoLaunchEnabled(result.enabled);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível consultar a inicialização automática.");
+    } finally {
+      setAutoLaunchLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); void loadAutoLaunch(); }, [load, loadAutoLaunch]);
+
+  const toggleAutoLaunch = async () => {
+    if (!window.anonymosDesktop || !autoLaunchAvailable || autoLaunchBusy) return;
+    setAutoLaunchBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await window.anonymosDesktop.setAutoLaunch(!autoLaunchEnabled);
+      setAutoLaunchEnabled(result.enabled);
+      setMessage(result.enabled
+        ? "O ANONYMOS será aberto automaticamente quando você entrar na sua conta do Windows."
+        : "A inicialização automática do ANONYMOS foi desativada.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível alterar a inicialização automática.");
+    } finally {
+      setAutoLaunchBusy(false);
+    }
+  };
 
   const disable = async (id: string, name: string) => {
     if (!window.anonymosDesktop || busyId) return;
@@ -82,6 +123,23 @@ function StartupManager() {
             <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/40 px-4 py-3 text-xs font-semibold transition hover:border-primary/50 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar lista</button>
           </div>
         </div>
+      </section>
+
+      <section className="glass flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Power className="h-5 w-5" /></div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm font-bold">Iniciar ANONYMOS com o Windows</h2>
+              <span className={`rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ${autoLaunchEnabled ? "border-success/30 bg-success/10 text-success" : "border-border text-muted-foreground"}`}>{autoLaunchLoading ? "VERIFICANDO" : autoLaunchEnabled ? "ATIVADO" : "DESATIVADO"}</span>
+            </div>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">Quando ativado, o painel abre automaticamente depois que você entrar na sua conta do Windows. A configuração vale somente para este usuário e pode ser desligada aqui.</p>
+            {!autoLaunchAvailable && !autoLaunchLoading && <p className="mt-2 text-[10px] text-warning">Disponível na versão instalada do ANONYMOS para Windows.</p>}
+          </div>
+        </div>
+        <button type="button" onClick={() => void toggleAutoLaunch()} disabled={!autoLaunchAvailable || autoLaunchLoading || autoLaunchBusy} className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${autoLaunchEnabled ? "border border-warning/30 text-warning hover:bg-warning/10" : "bg-brand text-primary-foreground hover:brightness-110"}`}>
+          {autoLaunchBusy ? "Salvando…" : autoLaunchEnabled ? "Desativar" : "Ativar"}
+        </button>
       </section>
 
       {error && <div role="alert" className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-4 text-sm text-warning"><AlertCircle className="h-5 w-5 shrink-0" />{error}</div>}
