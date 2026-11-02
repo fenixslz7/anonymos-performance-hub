@@ -1,14 +1,24 @@
-# Welcome to your Lovable project
+# Anonymos Performance Hub
+
+Criar o painel ANONYMOS PERFORMANCE baseado nas telas do vídeo em anexo (arquivos principais) e na imagem complementar.
+
+Módulos essenciais:
+1. Dashboard Principal (time_04.jpg): Interface dark moderna estilo aplicativo desktop gamer, com header com controles de janela, banner 'Bem-vindo de volta, Anonymos' com arte estilizada e botão 'Mais Produtos', card de telemetria em tempo real GPUSENSE com gráfico de linha dinâmica, e cards laterais de ação com 1 clique: 'Modo Limpeza' (Varredura de processos), 'Liberar Memória' (Compressão) e 'Segundo Plano' (Parar agora), com estados interativos e feedback visual ao executar.
+2. Monitor em Colmeia / Hexagonal Grid (time_07.jpg): Tela 'Tudo em tempo real' com uma matriz hexagonal (favo de mel) interativa representando os processos e threads do sistema, com cores dinâmicas por status e tooltip detalhado ao passar o mouse (nome do processo, % CPU, MB de RAM, PID), além de cards flutuantes laterais com gráfico de linha de Uso de CPU em tempo real, especificações do sistema e barra segmentada de memória RAM.
+3. Árvore de Otimização (time_19.jpg): Mindmap com o núcleo Anonymos conectado a serviços do Windows (Telemetria, Windows Defender, Xbox Game Bar, Windows Update, Apps pré-instalados) com switches interativos para desativar processos desnecessários.
+4. Ajustes Gráficos & Vibrance: Controles de saturação, contraste, brilho e presets de perfis gamer.
+5. Assistente Anonymos IA: Drawer lateral retrátil com orbe luminoso animado e chat interativo para tirar dúvidas e sugerir melhorias de FPS.
+6. Biblioteca de jogos inspirada na referência complementar (Fortnite, FiveM, CS2, Valorant) com score de boost e botão de inicialização otimizada.
 
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/4d479fe3-6f43-4cf1-9a43-37140107fd94).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +30,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
