@@ -43,6 +43,13 @@ export interface AnonymosProcessInfo {
   responding: boolean;
   startTime: string | null;
 }
+export interface AnonymosHistoryEntry {
+  id: string;
+  capturedAt: string;
+  type: string;
+  target: string;
+  details: Record<string, unknown>;
+}
 export interface AnonymosDetectedGame { id: "fivem" | "gtav" | "fortnite" | "cs2" | "valorant"; name: string; path: string; }
 export interface AnonymosStartupEntry {
   id: string;
@@ -72,6 +79,7 @@ declare global {
       getGameBoostStatus: () => Promise<{ active: boolean; label: string }>;
       startGameBoost: () => Promise<{ success: boolean; alreadyActive: boolean }>;
       stopGameBoost: () => Promise<{ success: boolean }>;
+      listActionHistory: () => Promise<AnonymosHistoryEntry[]>;
       scanCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       runCleanup: (categories: Array<"user-temp" | "windows-temp">) => Promise<AnonymosCleanupReport>;
       getNetworkDiagnostics: () => Promise<AnonymosNetworkDiagnostics>;
