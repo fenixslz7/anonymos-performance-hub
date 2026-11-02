@@ -55,9 +55,9 @@ function Monitor() {
       {error && <section className="glass border border-warning/40 p-4 text-sm"><div className="font-semibold">Telemetria indisponível</div><p className="mt-1 text-muted-foreground">{error}</p></section>}
       {snapshot && <HoneycombPanel metrics={[
         { id: "cpu", label: "CPU", value: percent(snapshot.cpu.loadPercent), detail: snapshot.cpu.name, icon: Cpu },
-        { id: "ram", label: "RAM", value: percent(snapshot.memory.usedPercent), detail: \`\${bytes(snapshot.memory.usedBytes)} usados de \${bytes(snapshot.memory.totalBytes)}\`, icon: MemoryStick },
-        { id: "gpu", label: "GPU", value: \`\${snapshot.gpu.length} detectada(s)\`, detail: snapshot.gpu.map((gpu) => gpu.name).join(" · ") || "Não identificado", icon: MonitorCog },
-        { id: "ssd", label: "DISCOS", value: \`\${snapshot.disks.length} unidade(s)\`, detail: snapshot.disks.map((disk) => \`\${disk.name}: \${bytes(disk.freeBytes)} livres\`).join(" · ") || "Nenhuma unidade detectada", icon: HardDrive },
+        { id: "ram", label: "RAM", value: percent(snapshot.memory.usedPercent), detail: `${bytes(snapshot.memory.usedBytes)} usados de ${bytes(snapshot.memory.totalBytes)}`, icon: MemoryStick },
+        { id: "gpu", label: "GPU", value: `${snapshot.gpu.length} detectada(s)`, detail: snapshot.gpu.map((gpu) => gpu.name).join(" · ") || "Não identificado", icon: MonitorCog },
+        { id: "ssd", label: "DISCOS", value: `${snapshot.disks.length} unidade(s)`, detail: snapshot.disks.map((disk) => `${disk.name}: ${bytes(disk.freeBytes)} livres`).join(" · ") || "Nenhuma unidade detectada", icon: HardDrive },
         { id: "net", label: "REDE", value: "Abrir", detail: "Diagnóstico de latência, perda de pacotes, DNS e velocidade.", icon: Wifi },
       ]} />}
       {snapshot && <>
