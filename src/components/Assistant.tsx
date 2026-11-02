@@ -25,7 +25,7 @@ function reply(question: string, snapshot: AnonymosSystemSnapshot | null): strin
   }
   if (query.includes("gpu") || query.includes("placa de vídeo") || query.includes("placa de video")) {
     if (!snapshot) return "A detecção da GPU ainda não está disponível. Abra o Monitor na versão desktop.";
-    return `Adaptadores detectados: ${snapshot.gpu.map((gpu) => gpu.name + (gpu.adapterRamBytes ? " · " + formatBytes(gpu.adapterRamBytes) + " de memória reportada" : "")).join("; ") || "nenhum"}. Uso em porcentagem e temperatura ainda dependem de integração específica do fabricante e não são medidos nesta versão.`;
+    return `Adaptadores detectados: ${snapshot.gpu.map((gpu) => gpu.name + (gpu.adapterRamBytes ? " · " + formatBytes(gpu.adapterRamBytes) + " de memória reportada" : "") + (gpu.loadPercent == null ? " · uso N/D" : " · uso " + Math.round(gpu.loadPercent) + "%") + (gpu.temperatureC == null ? " · temperatura N/D" : " · " + gpu.temperatureC + "°C")).join("; ") || "nenhum"}. As leituras de utilização, temperatura e VRAM dedicada só aparecem quando NVIDIA SMI está disponível; em outras GPUs permanecem N/D, sem estimativa inventada.`;
   }
   if (query.includes("ping") || query.includes("lag") || query.includes("internet")) return "Abra a área Internet para medir latência, perda de pacotes, adaptadores e DNS. Esses testes ajudam a diagnosticar a conexão, mas nenhuma alteração garante redução de ping.";
   if (query.includes("ssd") || query.includes("disco") || query.includes("armazenamento")) {
