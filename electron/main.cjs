@@ -33,7 +33,7 @@ function registerSystemIpc() {
       $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
       $os = Get-CimInstance Win32_OperatingSystem
       $cs = Get-CimInstance Win32_ComputerSystem
-      $gpu = @(Get-CimInstance Win32_VideoController | ForEach-Object { [pscustomobject]@{ name=$_.Name; driverVersion=$_.DriverVersion; adapterRamBytes=$_.AdapterRAM } })
+      $gpu = @(Get-CimInstance Win32_VideoController | ForEach-Object { [pscustomobject]@{ name=$_.Name; driverVersion=$_.DriverVersion; adapterRamBytes=$_.AdapterRAM; loadPercent=$null; temperatureC=$null; memoryUsedBytes=$null; memoryTotalBytes=$null; telemetrySource=$null } })
       $disks = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { [pscustomobject]@{ name=$_.DeviceID; label=$_.VolumeName; sizeBytes=[double]$_.Size; freeBytes=[double]$_.FreeSpace } })
       $memoryTotal = [double]$cs.TotalPhysicalMemory
       $memoryFree = [double]$os.FreePhysicalMemory * 1024
@@ -50,7 +50,37 @@ function registerSystemIpc() {
       }
       $result | ConvertTo-Json -Depth 5 -Compress
     `;
-    return runPowerShell(script);
+    const snapshot = await runPowerShell(script);
+    try {
+      let nvidiaOutput = "";
+      const candidates = ["nvidia-smi.exe", join(process.env.WINDIR || "C:\\Windows", "System32", "nvidia-smi.exe"), "C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe"];
+      for (const executable of candidates) {
+        try {
+          const result = await execFileAsync(executable, ["--query-gpu=index,name,utilization.gpu,temperature.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"], { windowsHide: true, timeout: 6000, maxBuffer: 128 * 1024 });
+          nvidiaOutput = result.stdout;
+          if (nvidiaOutput.trim()) break;
+        } catch { /* Tenta o próximo caminho conhecido do utilitário NVIDIA. */ }
+      }
+      const rows = nvidiaOutput.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean);
+      for (const line of rows) {
+        const columns = line.split(",").map((value) => value.trim());
+        if (columns.length < 6) continue;
+        const index = Number.parseInt(columns[0], 10);
+        const name = columns[1];
+        const match = snapshot.gpu.find((gpu) => gpu.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(gpu.name.toLowerCase())) || snapshot.gpu[index];
+        if (!match) continue;
+        const utilization = Number.parseFloat(columns[2]);
+        const temperature = Number.parseFloat(columns[3]);
+        const usedMiB = Number.parseFloat(columns[4]);
+        const totalMiB = Number.parseFloat(columns[5]);
+        match.loadPercent = Number.isFinite(utilization) ? utilization : null;
+        match.temperatureC = Number.isFinite(temperature) ? temperature : null;
+        match.memoryUsedBytes = Number.isFinite(usedMiB) ? usedMiB * 1024 * 1024 : null;
+        match.memoryTotalBytes = Number.isFinite(totalMiB) ? totalMiB * 1024 * 1024 : null;
+        match.telemetrySource = "NVIDIA SMI";
+      }
+    } catch { /* GPU telemetry is optional; keep explicit null values when the driver API is unavailable. */ }
+    return snapshot;
   });
 
   ipcMain.handle("system:processes", async () => {
