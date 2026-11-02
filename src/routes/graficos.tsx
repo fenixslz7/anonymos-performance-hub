@@ -59,7 +59,7 @@ function Graphics() {
         <div className="mb-3 flex items-center gap-2"><Gamepad2 className="h-4 w-4 text-primary" /><h2 className="text-sm font-bold">Selecione o perfil do jogo</h2></div>
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {games.map((game) => <button key={game.name} type="button" aria-pressed={selectedGame === game.name} onClick={() => setSelectedGame(game.name)} className={`group flex min-h-20 items-center gap-3 rounded-xl border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/50 ${selectedGame === game.name ? "border-primary bg-primary/10 shadow-glow" : "border-border bg-background/30"}`}>
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-secondary">
+            <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-secondary">
               <span className="font-display text-lg font-black text-muted-foreground">{game.short}</span>
               {game.image && <img src={game.image} alt={`Ícone ${game.name}`} loading="lazy" className="absolute h-8 w-8 object-contain brightness-0 invert" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
             </div>
