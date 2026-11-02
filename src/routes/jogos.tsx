@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { FolderOpen, Gamepad2, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, FolderOpen, Gamepad2, RotateCcw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/jogos")({
-  head: () => ({ meta: [{ title: "Game Launcher — ANONYMOS PERFORMANCE" }, { name: "description", content: "Abra jogos selecionando o executável local." }] }),
+  head: () => ({ meta: [{ title: "Game Center — ANONYMOS PERFORMANCE" }, { name: "description", content: "Biblioteca visual, inicialização e modo de jogo reversível." }] }),
   component: Games,
 });
 
@@ -19,6 +19,24 @@ function Games() {
   const [selected, setSelected] = useState("FiveM");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [boostActive, setBoostActive] = useState(false);
+  const [boostBusy, setBoostBusy] = useState(false);
+  const [boostMessage, setBoostMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      if (!window.anonymosDesktop) return;
+      try {
+        const result = await window.anonymosDesktop.getGameBoostStatus();
+        if (active) setBoostActive(result.active);
+      } catch (error) {
+        if (active) setBoostMessage(error instanceof Error ? error.message : "Não foi possível consultar o modo de jogo.");
+      }
+    };
+    void refresh();
+    return () => { active = false; };
+  }, []);
 
   const launch = async () => {
     if (!window.anonymosDesktop) { setStatus("Disponível somente no aplicativo desktop para Windows."); return; }
@@ -32,13 +50,57 @@ function Games() {
     } finally { setBusy(false); }
   };
 
+  const startBoost = async () => {
+    if (!window.anonymosDesktop || boostBusy) return;
+    if (!window.confirm("Ativar o Modo de Jogo? O ANONYMOS guardará o plano de energia atual, mudará para Alto desempenho e tentará restaurar o original ao fechar o aplicativo ou ao clicar em Restaurar.")) return;
+    setBoostBusy(true); setBoostMessage("");
+    try {
+      await window.anonymosDesktop.startGameBoost();
+      setBoostActive(true);
+      setBoostMessage("Modo de Jogo ativado. Plano anterior salvo para restauração.");
+    } catch (error) {
+      setBoostMessage(error instanceof Error ? error.message : "Não foi possível ativar o Modo de Jogo.");
+    } finally { setBoostBusy(false); }
+  };
+
+  const stopBoost = async () => {
+    if (!window.anonymosDesktop || boostBusy) return;
+    if (!window.confirm("Restaurar o plano de energia que estava ativo antes do Modo de Jogo?")) return;
+    setBoostBusy(true); setBoostMessage("");
+    try {
+      await window.anonymosDesktop.stopGameBoost();
+      setBoostActive(false);
+      setBoostMessage("Plano de energia anterior restaurado.");
+    } catch (error) {
+      setBoostMessage(error instanceof Error ? error.message : "Não foi possível restaurar o plano anterior.");
+    } finally { setBoostBusy(false); }
+  };
+
   return (
-    <div className="space-y-5">
-      <header>
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-[.18em] text-primary"><Gamepad2 className="h-3 w-3" /> GAME CENTER</div>
-        <h1 className="font-display text-2xl font-bold">Game Launcher</h1>
-        <p className="text-sm text-muted-foreground">Sua biblioteca de jogos com identidade visual própria. Selecione um título e localize o executável instalado no PC.</p>
-      </header>
+    <div className="mx-auto max-w-[1450px] space-y-5">
+      <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/20 via-card to-background p-6 md:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-16 opacity-15"><Gamepad2 className="h-64 w-64 text-primary" /></div>
+        <div className="relative">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-[.18em] text-primary"><Gamepad2 className="h-3 w-3" /> ANONYMOS GAME CENTER</div>
+          <h1 className="font-display text-3xl font-black md:text-4xl">Prepare-se para <span className="text-primary">jogar.</span></h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Biblioteca de jogos, inicialização local e um modo de energia temporário que pode ser restaurado.</p>
+        </div>
+      </section>
+
+      <section className="glass relative overflow-hidden p-5">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="grid h-12 w-12 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Zap className="h-6 w-6" /></div>
+            <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-display text-lg font-bold">Modo de Jogo</h2><span className={`rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ${boostActive ? "border-success/30 bg-success/10 text-success" : "border-border text-muted-foreground"}`}>{boostActive ? "ATIVO" : "DESATIVADO"}</span></div><p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">Muda temporariamente o plano de energia do Windows para Alto desempenho. Guarda o plano original e oferece restauração; não desativa serviços nem promete FPS extra.</p></div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {!boostActive ? <button type="button" onClick={() => void startBoost()} disabled={boostBusy || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-50">{boostBusy ? "Ativando…" : <><Zap className="h-4 w-4" /> Ativar Modo de Jogo</>}</button> : <button type="button" onClick={() => void stopBoost()} disabled={boostBusy || !window.anonymosDesktop} className="inline-flex items-center gap-2 rounded-lg border border-success/30 px-4 py-2.5 text-xs font-bold text-success transition hover:bg-success/10 disabled:opacity-50">{boostBusy ? "Restaurando…" : <><RotateCcw className="h-4 w-4" /> Restaurar plano original</>}</button>}
+          </div>
+        </div>
+        {boostMessage && <p role="status" className="relative mt-3 text-xs text-muted-foreground">{boostMessage}</p>}
+      </section>
+
       <section className="glass p-5">
         <div className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="h-4 w-4 text-primary" /> Biblioteca de jogos</div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -63,7 +125,7 @@ function Games() {
       </section>
       <section className="glass flex gap-3 p-4 text-sm">
         <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
-        <div><div className="font-semibold">Inicialização transparente</div><p className="mt-1 text-muted-foreground">Esta versão abre o executável escolhido. Não promete FPS extra, não encerra processos e não altera prioridades ou serviços do Windows sem uma implementação específica e reversível.</p></div>
+        <div><div className="font-semibold">Controles transparentes</div><p className="mt-1 text-muted-foreground">A inicialização abre o executável escolhido. O Modo de Jogo altera somente o plano de energia e guarda o anterior para restauração. Não são encerrados programas automaticamente.</p></div>
       </section>
     </div>
   );
