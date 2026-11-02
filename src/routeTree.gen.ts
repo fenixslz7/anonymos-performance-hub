@@ -10,33 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GraficosRouteImport } from './routes/graficos'
+import { Route as JogosRouteImport } from './routes/jogos'
+import { Route as MonitorRouteImport } from './routes/monitor'
+import { Route as OtimizacaoRouteImport } from './routes/otimizacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GraficosRoute = GraficosRouteImport.update({
+  id: '/graficos',
+  path: '/graficos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JogosRoute = JogosRouteImport.update({
+  id: '/jogos',
+  path: '/jogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonitorRoute = MonitorRouteImport.update({
+  id: '/monitor',
+  path: '/monitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OtimizacaoRoute = OtimizacaoRouteImport.update({
+  id: '/otimizacao',
+  path: '/otimizacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/graficos': typeof GraficosRoute
+  '/jogos': typeof JogosRoute
+  '/monitor': typeof MonitorRoute
+  '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/graficos': typeof GraficosRoute
+  '/jogos': typeof JogosRoute
+  '/monitor': typeof MonitorRoute
+  '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/graficos': typeof GraficosRoute
+  '/jogos': typeof JogosRoute
+  '/monitor': typeof MonitorRoute
+  '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/graficos' | '/jogos' | '/monitor' | '/otimizacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/graficos' | '/jogos' | '/monitor' | '/otimizacao'
+  id: '__root__' | '/' | '/graficos' | '/jogos' | '/monitor' | '/otimizacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GraficosRoute: typeof GraficosRoute
+  JogosRoute: typeof JogosRoute
+  MonitorRoute: typeof MonitorRoute
+  OtimizacaoRoute: typeof OtimizacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +88,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/graficos': {
+      id: '/graficos'
+      path: '/graficos'
+      fullPath: '/graficos'
+      preLoaderRoute: typeof GraficosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jogos': {
+      id: '/jogos'
+      path: '/jogos'
+      fullPath: '/jogos'
+      preLoaderRoute: typeof JogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monitor': {
+      id: '/monitor'
+      path: '/monitor'
+      fullPath: '/monitor'
+      preLoaderRoute: typeof MonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/otimizacao': {
+      id: '/otimizacao'
+      path: '/otimizacao'
+      fullPath: '/otimizacao'
+      preLoaderRoute: typeof OtimizacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GraficosRoute: GraficosRoute,
+  JogosRoute: JogosRoute,
+  MonitorRoute: MonitorRoute,
+  OtimizacaoRoute: OtimizacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
