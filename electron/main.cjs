@@ -96,7 +96,59 @@ function registerSystemIpc() {
 }
 
 
+
+async function detectInstalledGames() {
+  if (process.platform !== "win32") throw new Error("Detecção de jogos disponível somente no Windows.");
+  const script = [
+    "$ErrorActionPreference = 'SilentlyContinue'",
+    "$found = New-Object System.Collections.Generic.List[object]",
+    "function Add-Game($id,$name,$path) { if ($path -and (Test-Path -LiteralPath $path -PathType Leaf) -and -not ($found | Where-Object id -eq $id)) { $found.Add([pscustomobject]@{ id=$id; name=$name; path=[System.IO.Path]::GetFullPath($path) }) } }",
+    "$steamRoots = @()",
+    "if ($env:ProgramFiles) { $steamRoots += (Join-Path $env:ProgramFiles 'Steam') }",
+    "$pf86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')",
+    "if ($pf86) { $steamRoots += (Join-Path $pf86 'Steam') }",
+    "if ($env:LOCALAPPDATA) { $steamRoots += (Join-Path $env:LOCALAPPDATA 'Steam') }",
+    "$libraries = New-Object System.Collections.Generic.List[string]",
+    "foreach ($root in $steamRoots) { if (Test-Path -LiteralPath $root) { $libraries.Add($root) }; $vdf = Join-Path $root 'steamapps\\libraryfolders.vdf'; if (Test-Path -LiteralPath $vdf) { $text = Get-Content -LiteralPath $vdf -Raw; foreach ($match in [regex]::Matches($text, '\"path\"\\s+\"([^\"]+)\"')) { $candidate = $match.Groups[1].Value.Replace('\\\\','\\'); if (Test-Path -LiteralPath $candidate) { $libraries.Add($candidate) } } } }",
+    "foreach ($library in ($libraries | Select-Object -Unique)) {",
+    "  Add-Game 'cs2' 'Counter-Strike 2' (Join-Path $library 'steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe')",
+    "  Add-Game 'gtav' 'GTA V' (Join-Path $library 'steamapps\\common\\Grand Theft Auto V\\GTA5.exe')",
+    "}",
+    "if ($env:LOCALAPPDATA) { Add-Game 'fivem' 'FiveM' (Join-Path $env:LOCALAPPDATA 'FiveM\\FiveM.exe'); Add-Game 'fivem' 'FiveM' (Join-Path $env:LOCALAPPDATA 'FiveM\\FiveM.app\\FiveM.exe') }",
+    "$fortnitePaths = @()",
+    "if ($env:ProgramFiles) { $fortnitePaths += (Join-Path $env:ProgramFiles 'Epic Games\\Fortnite\\FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe') }",
+    "if ($pf86) { $fortnitePaths += (Join-Path $pf86 'Epic Games\\Fortnite\\FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe') }",
+    "if ($env:ProgramData) { $manifestDir = Join-Path $env:ProgramData 'Epic\\EpicGamesLauncher\\Data\\Manifests'; if (Test-Path -LiteralPath $manifestDir) { Get-ChildItem -LiteralPath $manifestDir -Filter '*.item' -File -ErrorAction SilentlyContinue | ForEach-Object { try { $manifest = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json; if (($manifest.AppName -match 'Fortnite') -or ($manifest.DisplayName -match 'Fortnite')) { $fortnitePaths += (Join-Path $manifest.InstallLocation 'FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe') } } catch {} } } }",
+    "foreach ($path in $fortnitePaths) { Add-Game 'fortnite' 'Fortnite' $path }",
+    "$valorantPaths = @('C:\\Riot Games\\VALORANT\\live\\VALORANT.exe')",
+    "if ($env:ProgramFiles) { $valorantPaths += (Join-Path $env:ProgramFiles 'Riot Games\\VALORANT\\live\\VALORANT.exe') }",
+    "foreach ($path in $valorantPaths) { Add-Game 'valorant' 'Valorant' $path }",
+    "[pscustomobject]@{ capturedAt=(Get-Date).ToString('o'); games=@($found.ToArray()) } | ConvertTo-Json -Depth 4 -Compress"
+  ].join("\n");
+  const result = await runPowerShell(script);
+  const list = result && result.games;
+  return { capturedAt: result && result.capturedAt ? result.capturedAt : new Date().toISOString(), games: Array.isArray(list) ? list : list ? [list] : [] };
+}
+
 function registerGameIpc() {
+  ipcMain.handle("games:list-installed", async () => detectInstalledGames());
+  ipcMain.handle("games:launch-detected", async (_event, id) => {
+    const allowedIds = new Set(["fivem", "gtav", "fortnite", "cs2", "valorant"]);
+    if (typeof id !== "string" || !allowedIds.has(id)) throw new Error("Jogo não permitido.");
+    const result = await detectInstalledGames();
+    const game = result.games.find((entry) => entry.id === id);
+    if (!game || typeof game.path !== "string" || !game.path.toLowerCase().endsWith(".exe")) {
+      throw new Error("O jogo não foi encontrado nos locais conhecidos. Use a seleção manual do executável.");
+    }
+    return new Promise((resolveLaunch, rejectLaunch) => {
+      const child = spawn(game.path, [], { detached: true, stdio: "ignore", windowsHide: false });
+      child.once("error", rejectLaunch);
+      child.once("spawn", () => {
+        child.unref();
+        resolveLaunch({ launched: true, name: game.name, executable: game.path });
+      });
+    });
+  });
   ipcMain.handle("games:pick-and-launch", async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return { launched: false, reason: "Janela indisponível." };
