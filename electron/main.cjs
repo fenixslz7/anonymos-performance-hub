@@ -92,7 +92,9 @@ function registerSystemIpc() {
       }) | ConvertTo-Json -Depth 3 -Compress
     `;
     const result = await runPowerShell(script);
-    return Array.isArray(result) ? result : result ? [result] : [];
+    const list = Array.isArray(result) ? result : result ? [result] : [];
+    const backups = await readJsonFile(processPriorityBackupFile(), {});
+    return list.map((item) => ({ ...item, priorityBoosted: Boolean(backups[String(item.pid) + ":" + item.startTime]) }));
   });
 }
 
@@ -489,6 +491,96 @@ const PROTECTED_PROCESS_NAMES = new Set([
   "svchost", "winlogon", "dwm", "fontdrvhost", "secure system", "memory compression",
   "electron", "node", "anonymos performance"
 ]);
+
+function processPriorityBackupFile() { return join(app.getPath("userData"), "process-priority-backups.json"); }
+const BOOSTABLE_GAME_PROCESSES = new Set([
+  "fivem", "fiveM".toLowerCase(), "gta5", "gta5_enhanced", "fortniteclient-win64-shipping",
+  "cs2", "valorant-win64-shipping", "valorant", "r5apex", "overwatch", "overwatch2",
+]);
+function registerProcessPriorityIpc() {
+  ipcMain.handle("system:boost-process-priority", async (_event, request) => {
+    if (process.platform !== "win32") throw new Error("Prioridade de processos disponível somente no Windows.");
+    if (!request || !Number.isSafeInteger(request.pid) || request.pid < 1 ||
+        typeof request.name !== "string" || !/^[a-zA-Z0-9_. -]{1,128}$/.test(request.name) ||
+        typeof request.startTime !== "string" || Number.isNaN(Date.parse(request.startTime))) {
+      throw new Error("Identificação do jogo inválida. Atualize o Monitor.");
+    }
+    if (!BOOSTABLE_GAME_PROCESSES.has(request.name.toLowerCase())) throw new Error("Somente processos de jogos conhecidos podem ter prioridade alterada.");
+    const key = String(request.pid) + ":" + request.startTime;
+    const backups = await readJsonFile(processPriorityBackupFile(), {});
+    if (backups[key]) return { success: true, alreadyBoosted: true, originalPriority: backups[key].originalPriority };
+
+    const pid = String(request.pid);
+    const name64 = Buffer.from(request.name, "utf8").toString("base64");
+    const start64 = Buffer.from(request.startTime, "utf8").toString("base64");
+    const inspect = [
+      "$ErrorActionPreference = 'Stop'",
+      "$target = Get-Process -Id " + pid + " -ErrorAction Stop",
+      "$expectedName = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+      "$expectedStart = [DateTime]::Parse([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + start64 + "'))).ToUniversalTime()",
+      "if ($target.ProcessName -ine $expectedName) { throw 'O processo mudou. Atualize a lista.' }",
+      "if ([math]::Abs(($target.StartTime.ToUniversalTime() - $expectedStart).TotalSeconds) -gt 2) { throw 'O PID foi reutilizado. Atualize a lista.' }",
+      "[pscustomobject]@{ priority=$target.PriorityClass.ToString(); name=$target.ProcessName; startTime=$target.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress"
+    ].join("\n");
+    const original = await runPowerShell(inspect);
+    const backup = { pid: request.pid, name: request.name, startTime: request.startTime, originalPriority: original.priority, boostedAt: new Date().toISOString() };
+    backups[key] = backup;
+    await writeJsonFile(processPriorityBackupFile(), backups);
+
+    try {
+      const setPriority = [
+        "$ErrorActionPreference = 'Stop'",
+        "$target = Get-Process -Id " + pid + " -ErrorAction Stop",
+        "$expectedName = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+        "$expectedStart = [DateTime]::Parse([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + start64 + "'))).ToUniversalTime()",
+        "if ($target.ProcessName -ine $expectedName) { throw 'O processo mudou. Atualize a lista.' }",
+        "if ([math]::Abs(($target.StartTime.ToUniversalTime() - $expectedStart).TotalSeconds) -gt 2) { throw 'O PID foi reutilizado. Atualize a lista.' }",
+        "$target.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::AboveNormal",
+        "@{ success=$true } | ConvertTo-Json -Compress"
+      ].join("\n");
+      await runPowerShell(setPriority);
+    } catch (error) {
+      delete backups[key];
+      await writeJsonFile(processPriorityBackupFile(), backups).catch(() => {});
+      throw error;
+    }
+    await recordAction("Prioridade de jogo elevada", request.name, { pid: request.pid, previousPriority: original.priority, currentPriority: "AboveNormal" });
+    return { success: true, alreadyBoosted: false, originalPriority: original.priority };
+  });
+
+  ipcMain.handle("system:restore-process-priority", async (_event, request) => {
+    if (process.platform !== "win32") throw new Error("Restauração de prioridade disponível somente no Windows.");
+    if (!request || !Number.isSafeInteger(request.pid) || request.pid < 1 ||
+        typeof request.name !== "string" || typeof request.startTime !== "string") {
+      throw new Error("Identificação do processo inválida.");
+    }
+    const key = String(request.pid) + ":" + request.startTime;
+    const backups = await readJsonFile(processPriorityBackupFile(), {});
+    const backup = backups[key];
+    if (!backup) throw new Error("Não existe backup de prioridade para este processo.");
+    const pid = String(backup.pid);
+    const name64 = Buffer.from(String(backup.name), "utf8").toString("base64");
+    const start64 = Buffer.from(String(backup.startTime), "utf8").toString("base64");
+    const priority64 = Buffer.from(String(backup.originalPriority), "utf8").toString("base64");
+    const script = [
+      "$ErrorActionPreference = 'Stop'",
+      "$target = Get-Process -Id " + pid + " -ErrorAction SilentlyContinue",
+      "if ($null -eq $target) { @{ success=$true; processMissing=$true } | ConvertTo-Json -Compress; exit }",
+      "$expectedName = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + name64 + "'))",
+      "$expectedStart = [DateTime]::Parse([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + start64 + "'))).ToUniversalTime()",
+      "$priority = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + priority64 + "'))",
+      "if ($target.ProcessName -ine $expectedName -or [math]::Abs(($target.StartTime.ToUniversalTime() - $expectedStart).TotalSeconds) -gt 2) { @{ success=$true; staleProcess=$true } | ConvertTo-Json -Compress; exit }",
+      "$target.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::$priority",
+      "@{ success=$true; restored=$priority } | ConvertTo-Json -Compress"
+    ].join("\n");
+    const result = await runPowerShell(script);
+    delete backups[key];
+    await writeJsonFile(processPriorityBackupFile(), backups);
+    await recordAction("Prioridade original restaurada", backup.name, { pid: backup.pid, originalPriority: backup.originalPriority, processMissing: Boolean(result.processMissing), staleProcess: Boolean(result.staleProcess) });
+    return { success: true, restored: result.restored || null, processMissing: Boolean(result.processMissing), staleProcess: Boolean(result.staleProcess) };
+  });
+}
+
 function registerProcessControlIpc() {
   ipcMain.handle("system:terminate-process", async (_event, request) => {
     if (process.platform !== "win32") throw new Error("Controle de processos disponível somente no Windows.");
@@ -793,6 +885,7 @@ app.whenReady().then(async () => {
   registerWindowIpc();
   registerSystemIpc();
   registerProcessControlIpc();
+  registerProcessPriorityIpc();
   registerStartupIpc();
   registerGameBoostIpc();
   registerHistoryIpc();
