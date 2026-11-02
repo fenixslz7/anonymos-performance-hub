@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 const desktopApi = Object.freeze({
   getInfo: () => ipcRenderer.invoke("desktop:app:info"),
+  getAutoLaunchSettings: () => ipcRenderer.invoke("desktop:auto-launch:get"),
+  setAutoLaunch: (enabled) => ipcRenderer.invoke("desktop:auto-launch:set", enabled),
   getSystemSnapshot: () => ipcRenderer.invoke("system:snapshot"),
   getProcesses: () => ipcRenderer.invoke("system:processes"),
   terminateProcess: (request) => ipcRenderer.invoke("system:terminate-process", request),
