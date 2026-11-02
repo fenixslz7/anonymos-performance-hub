@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { AnonymosProcessInfo, AnonymosSystemSnapshot } from "@/types/anonymos-desktop";
+import { Cpu, HardDrive, MemoryStick, MonitorCog, Wifi } from "lucide-react";
+import { HoneycombPanel } from "@/components/HoneycombPanel";
 
 export const Route = createFileRoute("/monitor")({
   head: () => ({ meta: [{ title: "Monitor do sistema — ANONYMOS PERFORMANCE" }, { name: "description", content: "Telemetria nativa do Windows e lista de processos." }] }),
@@ -51,6 +53,13 @@ function Monitor() {
         <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{updatedAt ? `Atualizado às ${updatedAt}` : "Aguardando telemetria"}</span>
       </header>
       {error && <section className="glass border border-warning/40 p-4 text-sm"><div className="font-semibold">Telemetria indisponível</div><p className="mt-1 text-muted-foreground">{error}</p></section>}
+      {snapshot && <HoneycombPanel metrics={[
+        { id: "cpu", label: "CPU", value: percent(snapshot.cpu.loadPercent), detail: snapshot.cpu.name, icon: Cpu },
+        { id: "ram", label: "RAM", value: percent(snapshot.memory.usedPercent), detail: \`\${bytes(snapshot.memory.usedBytes)} usados de \${bytes(snapshot.memory.totalBytes)}\`, icon: MemoryStick },
+        { id: "gpu", label: "GPU", value: \`\${snapshot.gpu.length} detectada(s)\`, detail: snapshot.gpu.map((gpu) => gpu.name).join(" · ") || "Não identificado", icon: MonitorCog },
+        { id: "ssd", label: "DISCOS", value: \`\${snapshot.disks.length} unidade(s)\`, detail: snapshot.disks.map((disk) => \`\${disk.name}: \${bytes(disk.freeBytes)} livres\`).join(" · ") || "Nenhuma unidade detectada", icon: HardDrive },
+        { id: "net", label: "REDE", value: "Abrir", detail: "Diagnóstico de latência, perda de pacotes, DNS e velocidade.", icon: Wifi },
+      ]} />}
       {snapshot && <>
         <section className="glass p-4">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Computador</div>
