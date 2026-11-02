@@ -12,6 +12,7 @@ const desktopApi = Object.freeze({
   startGameBoost: () => ipcRenderer.invoke("games:boost-start"),
   stopGameBoost: () => ipcRenderer.invoke("games:boost-stop"),
   listActionHistory: () => ipcRenderer.invoke("history:list"),
+  runBenchmark: () => ipcRenderer.invoke("benchmark:run"),
   scanCleanup: (categories) => ipcRenderer.invoke("cleanup:scan", categories),
   runCleanup: (categories) => ipcRenderer.invoke("cleanup:run", categories),
   getNetworkDiagnostics: () => ipcRenderer.invoke("network:diagnostics"),
