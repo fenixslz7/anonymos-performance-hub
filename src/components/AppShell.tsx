@@ -28,6 +28,8 @@ export function Logo() {
 export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const [open, setOpen] = useState(false);
+  const desktop = typeof window !== "undefined" ? window.anonymosDesktop : undefined;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
@@ -36,9 +38,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button onClick={() => setOpen(!open)} className="mr-3 flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">
             <Bot className="h-3.5 w-3.5 text-primary" /> Anonymos IA
           </button>
-          {[Minus, Square, X].map((I, i) => (
-            <span key={i} className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-secondary"><I className="h-3.5 w-3.5" /></span>
-          ))}
+          {desktop && (
+            <div className="flex items-center gap-1">
+              <button type="button" aria-label="Minimizar janela" title="Minimizar" onClick={() => void desktop.minimize()} className="grid h-7 w-7 place-items-center rounded text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <button type="button" aria-label="Maximizar ou restaurar janela" title="Maximizar ou restaurar" onClick={() => void desktop.toggleMaximize()} className="grid h-7 w-7 place-items-center rounded text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                <Square className="h-3 w-3" />
+              </button>
+              <button type="button" aria-label="Fechar aplicativo" title="Fechar" onClick={() => void desktop.close()} className="grid h-7 w-7 place-items-center rounded text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
