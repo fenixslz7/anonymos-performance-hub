@@ -126,6 +126,11 @@ async function detectInstalledGames() {
     "$valorantPaths = @('C:\\Riot Games\\VALORANT\\live\\VALORANT.exe')",
     "if ($env:ProgramFiles) { $valorantPaths += (Join-Path $env:ProgramFiles 'Riot Games\\VALORANT\\live\\VALORANT.exe') }",
     "foreach ($path in $valorantPaths) { Add-Game 'valorant' 'Valorant' $path }",
+    "$minecraftLauncherPaths = @()",
+    "if ($pf86) { $minecraftLauncherPaths += (Join-Path $pf86 'Minecraft Launcher\\MinecraftLauncher.exe') }",
+    "if ($env:ProgramFiles) { $minecraftLauncherPaths += (Join-Path $env:ProgramFiles 'Minecraft Launcher\\MinecraftLauncher.exe') }",
+    "if ($env:LOCALAPPDATA) { $minecraftLauncherPaths += (Join-Path $env:LOCALAPPDATA 'Programs\\Minecraft Launcher\\MinecraftLauncher.exe') }",
+    "foreach ($path in $minecraftLauncherPaths) { Add-Game 'minecraft' 'Minecraft' $path }",
     "[pscustomobject]@{ capturedAt=(Get-Date).ToString('o'); games=@($found.ToArray()) } | ConvertTo-Json -Depth 4 -Compress"
   ].join("\n");
   const result = await runPowerShell(script);
