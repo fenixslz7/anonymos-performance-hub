@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Bot, Cpu, HardDrive, MemoryStick, MonitorCog, Send, Sparkles, Wifi, X } from "lucide-react";
+import { Bot, Cpu, MemoryStick, MonitorCog, Send, Sparkles, Wifi, X } from "lucide-react";
 import type { AnonymosSystemSnapshot } from "@/types/anonymos-desktop";
 
 type Msg = { role: "user" | "assistant"; text: string };
