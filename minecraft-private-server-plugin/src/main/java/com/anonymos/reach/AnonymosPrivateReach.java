@@ -102,7 +102,7 @@ public final class AnonymosPrivateReach extends JavaPlugin {
         if (target == null || target == attacker || !target.isValid() || !target.getWorld().equals(attacker.getWorld())) return;
 
         double distance = attacker.getEyeLocation().distance(target.getLocation().add(0, 0.9, 0));
-        if (distance > reachDistance) return;
+        if (distance > reachDistance || !attacker.hasLineOfSight(target)) return;
 
         // Dano processado pelo servidor; esta configuração existe apenas no servidor privado administrado pelo usuário.
         target.damage(getAttackDamage(attacker), attacker);
