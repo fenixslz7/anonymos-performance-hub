@@ -24,9 +24,8 @@ function MinecraftLab() {
     try {
       const saved = localStorage.getItem("anonymos-minecraft-connection");
       if (saved) {
-        const parsed = JSON.parse(saved) as { apiUrl?: string; token?: string };
+        const parsed = JSON.parse(saved) as { apiUrl?: string };
         if (parsed.apiUrl) setApiUrl(parsed.apiUrl);
-        if (parsed.token) setToken(parsed.token);
       }
     } catch { /* Configuração local inválida: mantém os padrões seguros. */ }
   }, []);
