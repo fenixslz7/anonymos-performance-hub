@@ -1,0 +1,9 @@
+reach:
+  enabled: false
+  distance: 4.5
+  max-distance: 6.0
+api:
+  enabled: true
+  host: "127.0.0.1"
+  port: 8765
+  token: "CHANGE-ME-ON-FIRST-START"
