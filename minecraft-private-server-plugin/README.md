@@ -17,7 +17,7 @@ From this directory:
 mvn clean package
 ```
 
-The jar is created at `target/ANONYMOS-Private-Reach-1.8.9.jar`.
+The jar is created at `target/ANONYMOS-Private-Reach-1.8.9.jar`. A GitHub Actions workflow also builds it on pushes that change this plugin and publishes the JAR as an artifact when the build succeeds.
 
 ## Install
 
