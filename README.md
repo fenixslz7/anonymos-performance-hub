@@ -61,3 +61,10 @@ O instalador será gerado na pasta `release/`. A geração e o funcionamento do 
 O renderer não recebe acesso direto ao Node.js. O preload expõe somente controles de janela e informações básicas do aplicativo por IPC; operações de sistema devem ser implementadas no processo principal por APIs específicas e allowlist, nunca por comandos arbitrários enviados pela interface.
 
 Consulte [ROADMAP.md](./ROADMAP.md) para o estado real das fases e pendências.
+
+
+## Minecraft 1.8.9 — Private Server Lab
+
+O menu **Minecraft 1.8.9** adiciona um painel externo para configurar o Reach no servidor privado por meio do companion plugin em `minecraft-private-server-plugin/`. O servidor precisa de Spigot/Paper 1.8.8 API, Java 8 e ProtocolLib 4.8.0. O alcance é controlado pelo servidor e limitado a 6 blocos; a API usa token e fica vinculada a `127.0.0.1` por padrão. Consulte o README do plugin para build, instalação e configuração de rede.
+
+ESP e Auto Clicker aparecem como integrações de cliente pendentes nesta primeira entrega; não são apresentados como funções operacionais.
