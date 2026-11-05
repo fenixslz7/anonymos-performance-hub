@@ -17,7 +17,7 @@ import org.bukkit.scheduler.BukkitTask;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.OutputStream;\nimport java.io.InputStream;\nimport java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -164,7 +164,7 @@ public final class AnonymosPrivateReach extends JavaPlugin implements Listener {
             return;
         }
         if (reachEndpoint && "POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            String body = new String(readRequestBody(exchange.getRequestBody()), StandardCharsets.UTF_8);
             Matcher enabledMatch = Pattern.compile("\"enabled\"\\s*:\\s*(true|false)").matcher(body);
             Matcher distanceMatch = Pattern.compile("\"distance\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)").matcher(body);
             boolean enabled = enabledMatch.find() ? Boolean.parseBoolean(enabledMatch.group(1)) : reachEnabled;
@@ -176,7 +176,7 @@ public final class AnonymosPrivateReach extends JavaPlugin implements Listener {
         respond(exchange, 405, "{\"error\":\"method_not_allowed\"}");
     }
 
-    private boolean constantTimeEquals(String expected, String supplied) {
+    private byte[] readRequestBody(InputStream input) throws IOException {\n        ByteArrayOutputStream output = new ByteArrayOutputStream();\n        byte[] buffer = new byte[2048];\n        int read;\n        while ((read = input.read(buffer)) != -1) {\n            if (output.size() + read > 4096) throw new IOException("Payload muito grande.");\n            output.write(buffer, 0, read);\n        }\n        return output.toByteArray();\n    }\n\n    private boolean constantTimeEquals(String expected, String supplied) {
         if (expected == null || supplied == null) return false;
         return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8));
     }
