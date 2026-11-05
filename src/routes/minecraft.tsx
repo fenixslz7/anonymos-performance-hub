@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Activity, CheckCircle2, CircleAlert, Crosshair, Eye, MousePointer2, PlugZap, RefreshCw, Save, ShieldCheck, SlidersHorizontal, Wifi } from "lucide-react";
+import { Activity, CheckCircle2, CircleAlert, Crosshair, Eye, MousePointer2, PlugZap, RefreshCw, Save, ShieldCheck, Wifi } from "lucide-react";
 
 type ReachStatus = { enabled: boolean; distance: number; maxDistance: number; version?: string };
 
