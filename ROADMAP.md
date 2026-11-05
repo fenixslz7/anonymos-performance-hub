@@ -136,3 +136,14 @@ Transformar o painel React existente em um aplicativo desktop Windows instaláve
 - [ ] Teste físico de instalação, execução, permissões e reversão em um PC Windows de usuário.
 
 Este documento é o contrato técnico do projeto e deve ser atualizado a cada fase concluída.
+
+
+## Módulo Minecraft 1.8.9 — Private Server Lab
+- [x] Adicionada rota externa `/minecraft` com identidade visual ANONYMOS e navegação dedicada.
+- [x] Painel com conexão autenticada ao companion plugin, estado confirmado pelo servidor e controle de alcance de 3.1 a 6.0 blocos.
+- [x] Companion plugin para Spigot/Paper 1.8.8 API com ProtocolLib 4.8.0; intercepta ataques somente quando o modo privado está ativo, valida distância e linha de visão no servidor e persiste as configurações.
+- [x] API HTTP com token Bearer, bind padrão em loopback e documentação para uso em LAN privada.
+- [x] Workflow GitHub Actions para compilar o JAR Java 8 e publicar artefato após build bem-sucedido.
+- [ ] Confirmar build do plugin e testar em servidor Spigot/Paper 1.8.8 real com dois jogadores; compatibilidade deve ser validada no ambiente exato.
+- [ ] Testar build/typecheck da interface Electron após a inclusão da rota.
+- [ ] ESP e Auto Clicker permanecem pendentes de integração específica do cliente Minecraft 1.8.9; a interface os identifica claramente como não disponíveis, sem simular funcionamento.
