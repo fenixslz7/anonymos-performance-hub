@@ -1,0 +1,14 @@
+name: AnonymosPrivateReach
+main: com.anonymos.reach.AnonymosPrivateReach
+version: 1.0.0
+author: ANONYMOS
+depend: [ProtocolLib]
+description: Reach de teste controlado para servidores privados Minecraft 1.8.x.
+commands:
+  anonymosreach:
+    description: Configura o modo de alcance privado.
+    usage: /anonymosreach <on|off|distance>
+    permission: anonymosreach.admin
+permissions:
+  anonymosreach.admin:
+    default: op
