@@ -17,7 +17,7 @@ import { Route as InicializacaoRouteImport } from './routes/inicializacao'
 import { Route as InternetRouteImport } from './routes/internet'
 import { Route as JogosRouteImport } from './routes/jogos'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
-import { Route as MonitorRouteImport } from './routes/monitor'
+import { Route as MinecraftRouteImport } from './routes/minecraft'\nimport { Route as MonitorRouteImport } from './routes/monitor'
 import { Route as OtimizacaoRouteImport } from './routes/otimizacao'
 
 const IndexRoute = IndexRouteImport.update({
@@ -60,7 +60,7 @@ const LimpezaRoute = LimpezaRouteImport.update({
   path: '/limpeza',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonitorRoute = MonitorRouteImport.update({
+const MinecraftRoute = MinecraftRouteImport.update({\n  id: '/minecraft',\n  path: '/minecraft',\n  getParentRoute: () => rootRouteImport,\n} as any)\nconst MonitorRoute = MonitorRouteImport.update({
   id: '/monitor',
   path: '/monitor',
   getParentRoute: () => rootRouteImport,
@@ -80,7 +80,7 @@ export interface FileRoutesByFullPath {
   '/internet': typeof InternetRoute
   '/jogos': typeof JogosRoute
   '/limpeza': typeof LimpezaRoute
-  '/monitor': typeof MonitorRoute
+  '/minecraft': typeof MinecraftRoute\n  '/minecraft': typeof MinecraftRoute\n  '/minecraft': typeof MinecraftRoute\n  '/monitor': typeof MonitorRoute
   '/otimizacao': typeof OtimizacaoRoute
 }
 export interface FileRoutesByTo {
@@ -119,7 +119,7 @@ export interface FileRouteTypes {
     | '/internet'
     | '/jogos'
     | '/limpeza'
-    | '/monitor'
+    | '/minecraft'\n    | '/monitor'
     | '/otimizacao'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -156,7 +156,7 @@ export interface RootRouteChildren {
   InternetRoute: typeof InternetRoute
   JogosRoute: typeof JogosRoute
   LimpezaRoute: typeof LimpezaRoute
-  MonitorRoute: typeof MonitorRoute
+  MinecraftRoute: typeof MinecraftRoute\n  MonitorRoute: typeof MonitorRoute
   OtimizacaoRoute: typeof OtimizacaoRoute
 }
 
@@ -218,7 +218,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LimpezaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/monitor': {
+    '/minecraft': {\n      id: '/minecraft'\n      path: '/minecraft'\n      fullPath: '/minecraft'\n      preLoaderRoute: typeof MinecraftRouteImport\n      parentRoute: typeof rootRouteImport\n    }\n    '/monitor': {
       id: '/monitor'
       path: '/monitor'
       fullPath: '/monitor'
@@ -244,7 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   InternetRoute: InternetRoute,
   JogosRoute: JogosRoute,
   LimpezaRoute: LimpezaRoute,
-  MonitorRoute: MonitorRoute,
+  MinecraftRoute: MinecraftRoute,\n  MonitorRoute: MonitorRoute,
   OtimizacaoRoute: OtimizacaoRoute,
 }
 export const routeTree = rootRouteImport
