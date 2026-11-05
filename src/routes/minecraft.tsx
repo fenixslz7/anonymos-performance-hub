@@ -51,7 +51,7 @@ function MinecraftLab() {
       const status = await apiRequest("/api/status");
       setServerStatus(status); setEnabled(status.enabled); setDistance(status.distance);
       setConnected(true); setMessage("Conectado ao plugin ANONYMOS Private Reach.");
-      localStorage.setItem("anonymos-minecraft-connection", JSON.stringify({ apiUrl: apiUrl.trim(), token: token.trim() }));
+      localStorage.setItem("anonymos-minecraft-connection", JSON.stringify({ apiUrl: apiUrl.trim() }));
     } catch (cause) {
       setConnected(false); setServerStatus(null);
       const reason = cause instanceof Error ? cause.message : "Não foi possível conectar.";
